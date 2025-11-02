@@ -1,48 +1,105 @@
-import React, { FC, HTMLAttributes, ReactNode, TableHTMLAttributes } from "react"
+import * as React from "react";
 
-interface TableCommonProps {
-  children: ReactNode
-  className?: string
-}
+import { cn } from "@/lib/utils";
 
-// <table>
-export const Table: FC<TableCommonProps & TableHTMLAttributes<HTMLTableElement>> = ({ children, className = "", ...props }) => (
-  <table className={`min-w-full border-collapse ${className}`} {...props}>
-    {children}
-  </table>
-)
+const Table = React.forwardRef<
+  HTMLTableElement,
+  React.HTMLAttributes<HTMLTableElement>
+>(({ className, ...props }, ref) => (
+  <div className="relative w-full overflow-auto rounded-md border border-border">
+    <table
+      ref={ref}
+      className={cn("w-full caption-bottom text-sm", className)}
+      {...props}
+    />
+  </div>
+));
+Table.displayName = "Table";
 
-// <thead>
-export const TableHeader: FC<TableCommonProps & HTMLAttributes<HTMLTableSectionElement>> = ({ children, className = "", ...props }) => (
-  <thead className={className} {...props}>
-    {children}
-  </thead>
-)
+const TableHeader = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement>
+>(({ className, ...props }, ref) => (
+  <thead
+    ref={ref}
+    className={cn("[&_tr]:border-b bg-muted/50", className)}
+    {...props}
+  />
+));
+TableHeader.displayName = "TableHeader";
 
-// <tbody>
-export const TableBody: FC<TableCommonProps & HTMLAttributes<HTMLTableSectionElement>> = ({ children, className = "", ...props }) => (
-  <tbody className={className} {...props}>
-    {children}
-  </tbody>
-)
+const TableBody = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement>
+>(({ className, ...props }, ref) => (
+  <tbody
+    ref={ref}
+    className={cn("[&_tr:last-child]:border-0", className)}
+    {...props}
+  />
+));
+TableBody.displayName = "TableBody";
 
-// <tr>
-export const TableRow: FC<TableCommonProps & HTMLAttributes<HTMLTableRowElement>> = ({ children, className = "", ...props }) => (
-  <tr className={className} {...props}>
-    {children}
-  </tr>
-)
+const TableRow = React.forwardRef<
+  HTMLTableRowElement,
+  React.HTMLAttributes<HTMLTableRowElement>
+>(({ className, ...props }, ref) => (
+  <tr
+    ref={ref}
+    className={cn(
+      "border-b transition-colors hover:bg-muted/30 data-[state=selected]:bg-muted",
+      className
+    )}
+    {...props}
+  />
+));
+TableRow.displayName = "TableRow";
 
-// <th>
-export const TableHead: FC<TableCommonProps & HTMLAttributes<HTMLTableCellElement>> = ({ children, className = "", ...props }) => (
-  <th className={`text-left px-4 py-2 ${className}`} {...props}>
-    {children}
-  </th>
-)
+const TableHead = React.forwardRef<
+  HTMLTableCellElement,
+  React.ThHTMLAttributes<HTMLTableCellElement>
+>(({ className, ...props }, ref) => (
+  <th
+    ref={ref}
+    className={cn(
+      "h-10 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",
+      className
+    )}
+    {...props}
+  />
+));
+TableHead.displayName = "TableHead";
 
-// <td>
-export const TableCell: FC<TableCommonProps & HTMLAttributes<HTMLTableCellElement>> = ({ children, className = "", ...props }) => (
-  <td className={`px-4 py-2 ${className}`} {...props}>
-    {children}
-  </td>
-)
+const TableCell = React.forwardRef<
+  HTMLTableCellElement,
+  React.TdHTMLAttributes<HTMLTableCellElement>
+>(({ className, ...props }, ref) => (
+  <td
+    ref={ref}
+    className={cn("p-4 align-middle [&:has([role=checkbox])]:pr-0", className)}
+    {...props}
+  />
+));
+TableCell.displayName = "TableCell";
+
+const TableCaption = React.forwardRef<
+  HTMLTableCaptionElement,
+  React.HTMLAttributes<HTMLTableCaptionElement>
+>(({ className, ...props }, ref) => (
+  <caption
+    ref={ref}
+    className={cn("mt-4 text-sm text-muted-foreground", className)}
+    {...props}
+  />
+));
+TableCaption.displayName = "TableCaption";
+
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
+};
