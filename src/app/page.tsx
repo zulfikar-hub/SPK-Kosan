@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Navigation } from "@/components/navigation"
-import { CheckCircle, Calculator, BarChart3, FileText, MapPin, DollarSign, Star, Wifi } from "lucide-react"
+import { CheckCircle, Calculator, BarChart3, FileText, MapPin, DollarSign, Star, Wifi, Shield } from "lucide-react"
 import Link from "next/link"
 
 export default function HomePage() {
@@ -156,6 +156,10 @@ export default function HomePage() {
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
                     <Star className="h-3 w-3" />
                     Rating
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
+                    <Shield className="h-3 w-3" />
+                    Keamanan
                   </span>
                 </div>
               </CardContent>

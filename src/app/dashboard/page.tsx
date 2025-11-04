@@ -284,29 +284,48 @@ const [kriteriaList, setKriteriaList] = useState<Kriteria[]>([]);
 
   // === Fungsi Tambah Kosan ===
   const addKosan = async () => {
-    try {
-      const res = await fetch("/api/kosan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newKosan),
-      });
-      if (!res.ok) throw new Error("Gagal menambah data kosan");
-      const data = await res.json();
-
-      setKosanList([...kosanList, data]);
-      setNewKosan({
-        nama: "",
-        harga: 0,
-        jarak: 0,
-        fasilitas: 0,
-        rating: 0,
-        sistem_keamanan: 0,
-      });
-    } catch (error) {
-      console.error(error);
-      alert("Gagal menambah data kosan");
+  try {
+    if (
+      !newKosan.nama ||
+      newKosan.harga === undefined ||
+      newKosan.jarak === undefined ||
+      newKosan.fasilitas === undefined ||
+      newKosan.rating === undefined ||
+      newKosan.sistem_keamanan === undefined
+    ) {
+      alert("Mohon lengkapi semua data kosan sebelum menambah!");
+      return;
     }
-  };
+
+    const payload = {
+      nama: newKosan.nama,
+      harga: Number(newKosan.harga),
+      jarak: Number(newKosan.jarak),
+      fasilitas: Number(newKosan.fasilitas),
+      rating: Number(newKosan.rating),
+      sistem_keamanan: Number(newKosan.sistem_keamanan),
+    };
+
+    const res = await fetch("/api/kosan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) throw new Error("Gagal menambah data kosan");
+
+    // ✅ setelah tambah, langsung ambil ulang data dari API
+    const updatedRes = await fetch("/api/kosan");
+    const updatedData = await updatedRes.json();
+    setKosanList(updatedData); // tampilkan hasil terbaru
+
+    alert("Data kosan berhasil ditambahkan!");
+  } catch (error) {
+    console.error(error);
+    alert("Terjadi kesalahan saat menambah data kosan");
+  }
+};
+
 
   // Hapus kosan
  const removeKosan = async (id: string) => {
