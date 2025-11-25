@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic"; // ⬅️ FIX UTAMA
+
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
@@ -5,7 +7,7 @@ import prisma from "@/lib/prisma";
 export async function GET() {
   try {
     const kosanList = await prisma.kosan.findMany({
-      orderBy: { id_kosan: "asc" }, // optional: biar urut berdasarkan ID
+      orderBy: { id_kosan: "asc" },
     });
 
     return NextResponse.json(kosanList, { status: 200 });
@@ -24,22 +26,13 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { nama, harga, jarak, fasilitas, rating, sistem_keamanan } = body;
 
-    // Validasi field wajib
-    if (
-      !nama ||
-      !harga ||
-      !jarak ||
-      !fasilitas ||
-      !rating ||
-      !sistem_keamanan
-    ) {
+    if (!nama || !harga || !jarak || !fasilitas || !rating || !sistem_keamanan) {
       return NextResponse.json(
         { error: "Semua field wajib diisi." },
         { status: 400 }
       );
     }
 
-    // Simpan ke database
     const kosan = await prisma.kosan.create({
       data: {
         nama,
@@ -64,12 +57,11 @@ export async function POST(req: Request) {
   }
 }
 
-// 📌 PUT: Update data kosan berdasarkan ID
+// 📌 PUT: Update data kosan
 export async function PUT(req: Request) {
   try {
     const body = await req.json();
-    const { id_kosan, nama, harga, jarak, fasilitas, rating, sistem_keamanan } =
-      body;
+    const { id_kosan, nama, harga, jarak, fasilitas, rating, sistem_keamanan } = body;
 
     if (!id_kosan) {
       return NextResponse.json(
@@ -118,7 +110,7 @@ export async function PUT(req: Request) {
   }
 }
 
-// 📌 DELETE: Hapus data kosan berdasarkan ID
+// 📌 DELETE: Hapus kosan
 export async function DELETE(req: Request) {
   try {
     const { searchParams } = new URL(req.url);

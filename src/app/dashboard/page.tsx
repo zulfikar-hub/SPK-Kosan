@@ -10,6 +10,7 @@ import { Navigation } from "@/components/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import React, { ReactNode } from "react";
 import {
   Table,
   TableHeader,
@@ -93,9 +94,9 @@ export default function DashboardPage() {
     fetchKosan();
   }, []);
 
-const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-const [editData, setEditData] = useState<Partial<KosanData>>({});
-const [kriteriaList, setKriteriaList] = useState<Kriteria[]>([]);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editData, setEditData] = useState<Partial<KosanData>>({});
+  const [kriteriaList, setKriteriaList] = useState<Kriteria[]>([]);
   const [bobotSementara, setBobotSementara] = useState<Record<string, number>>(
     {}
   );
@@ -110,14 +111,14 @@ const [kriteriaList, setKriteriaList] = useState<Kriteria[]>([]);
   });
   const [hasCalculated, setHasCalculated] = useState(false);
   const payload = {
-  id_kosan: editData.id_kosan, // wajib ada
-  nama: editData.nama,
-  harga: Number(editData.harga),
-  jarak: Number(editData.jarak),
-  fasilitas: Number(editData.fasilitas),
-  rating: Number(editData.rating),
-  sistem_keamanan: Number(editData.sistem_keamanan),
-};
+    id_kosan: editData.id_kosan, // wajib ada
+    nama: editData.nama,
+    harga: Number(editData.harga),
+    jarak: Number(editData.jarak),
+    fasilitas: Number(editData.fasilitas),
+    rating: Number(editData.rating),
+    sistem_keamanan: Number(editData.sistem_keamanan),
+  };
   useEffect(() => {
     const fetchKriteria = async () => {
       try {
@@ -145,8 +146,6 @@ const [kriteriaList, setKriteriaList] = useState<Kriteria[]>([]);
     };
     fetchKriteria();
   }, []);
-
-  
 
   // === FUNGSI TOPSIS ===
   const calculateTOPSIS = () => {
@@ -284,93 +283,92 @@ const [kriteriaList, setKriteriaList] = useState<Kriteria[]>([]);
 
   // === Fungsi Tambah Kosan ===
   const addKosan = async () => {
-  try {
-    if (
-      !newKosan.nama ||
-      newKosan.harga === undefined ||
-      newKosan.jarak === undefined ||
-      newKosan.fasilitas === undefined ||
-      newKosan.rating === undefined ||
-      newKosan.sistem_keamanan === undefined
-    ) {
-      alert("Mohon lengkapi semua data kosan sebelum menambah!");
-      return;
+    try {
+      if (
+        !newKosan.nama ||
+        newKosan.harga === undefined ||
+        newKosan.jarak === undefined ||
+        newKosan.fasilitas === undefined ||
+        newKosan.rating === undefined ||
+        newKosan.sistem_keamanan === undefined
+      ) {
+        alert("Mohon lengkapi semua data kosan sebelum menambah!");
+        return;
+      }
+
+      const payload = {
+        nama: newKosan.nama,
+        harga: Number(newKosan.harga),
+        jarak: Number(newKosan.jarak),
+        fasilitas: Number(newKosan.fasilitas),
+        rating: Number(newKosan.rating),
+        sistem_keamanan: Number(newKosan.sistem_keamanan),
+      };
+
+      const res = await fetch("/api/kosan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("Gagal menambah data kosan");
+
+      // ✅ setelah tambah, langsung ambil ulang data dari API
+      const updatedRes = await fetch("/api/kosan");
+      const updatedData = await updatedRes.json();
+      setKosanList(updatedData); // tampilkan hasil terbaru
+
+      alert("Data kosan berhasil ditambahkan!");
+    } catch (error) {
+      console.error(error);
+      alert("Terjadi kesalahan saat menambah data kosan");
     }
-
-    const payload = {
-      nama: newKosan.nama,
-      harga: Number(newKosan.harga),
-      jarak: Number(newKosan.jarak),
-      fasilitas: Number(newKosan.fasilitas),
-      rating: Number(newKosan.rating),
-      sistem_keamanan: Number(newKosan.sistem_keamanan),
-    };
-
-    const res = await fetch("/api/kosan", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) throw new Error("Gagal menambah data kosan");
-
-    // ✅ setelah tambah, langsung ambil ulang data dari API
-    const updatedRes = await fetch("/api/kosan");
-    const updatedData = await updatedRes.json();
-    setKosanList(updatedData); // tampilkan hasil terbaru
-
-    alert("Data kosan berhasil ditambahkan!");
-  } catch (error) {
-    console.error(error);
-    alert("Terjadi kesalahan saat menambah data kosan");
-  }
-};
-
+  };
 
   // Hapus kosan
- const removeKosan = async (id: string) => {
-  if (!confirm("Yakin ingin menghapus data kosan ini?")) return;
-  try {
-        const res = await fetch(`/api/kosan?id=${id}`, { method: "DELETE" });
-    if (!res.ok) throw new Error("Gagal hapus data kosan");
-    // Filter ulang data di state agar data yang dihapus hilang dari UI
-  setKosanList(prev => prev.filter((k) => k.id_kosan !== id));
-    alert("Data kosan berhasil dihapus ✅");
-  } catch (error) {
-    console.error("Terjadi kesalahan saat menghapus kosan:", error);
-    alert("Terjadi kesalahan saat menghapus kosan ❌");
-  }
-};
+  const removeKosan = async (id: string) => {
+    if (!confirm("Yakin ingin menghapus data kosan ini?")) return;
+    try {
+      const res = await fetch(`/api/kosan?id=${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Gagal hapus data kosan");
+      // Filter ulang data di state agar data yang dihapus hilang dari UI
+      setKosanList((prev) => prev.filter((k) => k.id_kosan !== id));
+      alert("Data kosan berhasil dihapus ✅");
+    } catch (error) {
+      console.error("Terjadi kesalahan saat menghapus kosan:", error);
+      alert("Terjadi kesalahan saat menghapus kosan ❌");
+    }
+  };
   // Edit kosan
- const handleEditClick = (kosan: KosanData) => {
+  const handleEditClick = (kosan: KosanData) => {
     setEditData(kosan);
     setIsEditModalOpen(true);
   };
 
   const handleSaveEdit = async () => {
-  try {
-    const res = await fetch("/api/kosan", {
-  method: "PUT",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(payload),
-});
-    if (!res.ok) throw new Error("Gagal update kosan");
+    try {
+      const res = await fetch("/api/kosan", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Gagal update kosan");
 
-    const updated = await res.json();
+      const updated = await res.json();
 
-    // Gunakan updated.data
-    setKosanList((prev) =>
-      prev.map((k) =>
-        k.id_kosan === updated.data.id_kosan ? updated.data : k
-      )
-    );
+      // Gunakan updated.data
+      setKosanList((prev) =>
+        prev.map((k) =>
+          k.id_kosan === updated.data.id_kosan ? updated.data : k
+        )
+      );
 
-    setIsEditModalOpen(false);
-  } catch (error) {
-    console.error(error);
-    alert("Gagal menyimpan perubahan");
-  }
-};
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error(error);
+      alert("Gagal menyimpan perubahan");
+    }
+  };
 
   // === Data Chart ===
   const chartData = kosanList.map((kosan) => ({
@@ -391,10 +389,10 @@ const [kriteriaList, setKriteriaList] = useState<Kriteria[]>([]);
           (sum, v) => sum + (v ?? 0) * 100,
           0
         );
- // Ganti warna tiap segmen
+  // Ganti warna tiap segmen
   // const COLORS = ["#8b5cf6", "#06b6d4", "#f59e0b", "#10b981", "#ef4444"];
 
-  const icons: Record<string, JSX.Element> = {
+  const icons: Record<string, ReactNode> = {
     harga: <DollarSign className="h-6 w-6 text-purple-600" />,
     jarak: <MapPin className="h-6 w-6 text-cyan-500" />,
     fasilitas: <Wifi className="h-6 w-6 text-yellow-500" />,
@@ -421,79 +419,89 @@ const [kriteriaList, setKriteriaList] = useState<Kriteria[]>([]);
         </div>
 
         <div className="grid md:grid-cols-4 sm:grid-cols-2 gap-6 mb-8">
-      {/* 🏠 Total Kosan */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Kosan</CardTitle>
-          <Home className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{kosanList.length}</div>
-          <p className="text-xs text-muted-foreground">Kosan terdaftar</p>
-        </CardContent>
-      </Card>
+          {/* 🏠 Total Kosan */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Kosan</CardTitle>
+              <Home className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{kosanList.length}</div>
+              <p className="text-xs text-muted-foreground">Kosan terdaftar</p>
+            </CardContent>
+          </Card>
 
-      {/* ⭐ Kosan Terbaik */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Kosan Terbaik</CardTitle>
-          <Star className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-xl font-semibold truncate max-w-[180px]">
-            {hasCalculated && kosanList.length > 0 ? kosanList[0].nama : "-"}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Skor:{" "}
-            {hasCalculated && kosanList.length > 0
-              ? kosanList[0].skor?.toFixed(3)
-              : "-"}
-          </p>
-        </CardContent>
-      </Card>
+          {/* ⭐ Kosan Terbaik */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Kosan Terbaik
+              </CardTitle>
+              <Star className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-xl font-semibold truncate max-w-[180px]">
+                {hasCalculated && kosanList.length > 0
+                  ? kosanList[0].nama
+                  : "-"}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Skor:{" "}
+                {hasCalculated && kosanList.length > 0
+                  ? kosanList[0].skor?.toFixed(3)
+                  : "-"}
+              </p>
+            </CardContent>
+          </Card>
 
-      {/* 💰 Rata-rata Harga */}
-      <Card>
-  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-    <CardTitle className="text-sm font-medium">Rata-rata Harga</CardTitle>
-    <DollarSign className="h-4 w-4 text-muted-foreground" />
-  </CardHeader>
-  <CardContent>
-    <div className="text-2xl font-bold">
-      {kosanList.length > 0
-        ? new Intl.NumberFormat("id-ID", {
-            style: "currency",
-            currency: "IDR",
-            minimumFractionDigits: 0,
-          }).format(
-            kosanList.reduce(
-              (sum, k) => sum + Number(String(k.harga).replace(/\D/g, "")), // ubah string ke angka murni
-              0
-            ) / kosanList.length
-          )
-        : "-"}
-    </div>
-    <p className="text-xs text-muted-foreground">Per bulan</p>
-  </CardContent>
-</Card>
+          {/* 💰 Rata-rata Harga */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Rata-rata Harga
+              </CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {kosanList.length > 0
+                  ? new Intl.NumberFormat("id-ID", {
+                      style: "currency",
+                      currency: "IDR",
+                      minimumFractionDigits: 0,
+                    }).format(
+                      kosanList.reduce(
+                        (sum, k) =>
+                          sum + Number(String(k.harga).replace(/\D/g, "")), // ubah string ke angka murni
+                        0
+                      ) / kosanList.length
+                    )
+                  : "-"}
+              </div>
+              <p className="text-xs text-muted-foreground">Per bulan</p>
+            </CardContent>
+          </Card>
 
-
-      {/* 🧮 Status Analisis */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Status Analisis</CardTitle>
-          <Calculator className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            <Badge variant={hasCalculated ? "default" : "secondary"}>
-              {hasCalculated ? "Selesai" : "Belum"}
-            </Badge>
-          </div>
-          <p className="text-xs text-muted-foreground">Perhitungan TOPSIS</p>
-        </CardContent>
-      </Card>
-    </div>
+          {/* 🧮 Status Analisis */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Status Analisis
+              </CardTitle>
+              <Calculator className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                <Badge variant={hasCalculated ? "default" : "secondary"}>
+                  {hasCalculated ? "Selesai" : "Belum"}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Perhitungan TOPSIS
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
         <Tabs defaultValue="data" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
@@ -632,316 +640,357 @@ const [kriteriaList, setKriteriaList] = useState<Kriteria[]>([]);
               </CardHeader>
               <CardContent>
                 <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nama</TableHead>
-            <TableHead>Harga</TableHead>
-            <TableHead>Jarak</TableHead>
-            <TableHead>Fasilitas</TableHead>
-            <TableHead>Rating</TableHead>
-            <TableHead>Sistem Keamanan</TableHead>
-            <TableHead>Aksi</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {kosanList.map((kosan) => (
-            <TableRow key={kosan.id_kosan}>
-              <TableCell className="font-medium">{kosan.nama}</TableCell>
-              <TableCell>
-                Rp {Number(kosan.harga).toLocaleString("id-ID")}
-              </TableCell>
-              <TableCell>{kosan.jarak} km</TableCell>
-              <TableCell>{kosan.fasilitas}/10</TableCell>
-              <TableCell>{kosan.rating}/5</TableCell>
-              <TableCell>{kosan.sistem_keamanan}/10</TableCell>
-              <TableCell className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEditClick(kosan)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => removeKosan(kosan.id_kosan)}
-                >
-                  <Trash2 className="h-4 w-4 text-red-500" />
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nama</TableHead>
+                      <TableHead>Harga</TableHead>
+                      <TableHead>Jarak</TableHead>
+                      <TableHead>Fasilitas</TableHead>
+                      <TableHead>Rating</TableHead>
+                      <TableHead>Sistem Keamanan</TableHead>
+                      <TableHead>Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {kosanList.map((kosan) => (
+                      <TableRow key={kosan.id_kosan}>
+                        <TableCell className="font-medium">
+                          {kosan.nama}
+                        </TableCell>
+                        <TableCell>
+                          Rp {Number(kosan.harga).toLocaleString("id-ID")}
+                        </TableCell>
+                        <TableCell>{kosan.jarak} km</TableCell>
+                        <TableCell>{kosan.fasilitas}/10</TableCell>
+                        <TableCell>{kosan.rating}/5</TableCell>
+                        <TableCell>{kosan.sistem_keamanan}/10</TableCell>
+                        <TableCell className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditClick(kosan)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeKosan(kosan.id_kosan)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
             {/* Modal Edit Kosan */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-  <DialogContent className="max-w-md w-full p-6 rounded-xl shadow-lg bg-white">
-    <DialogHeader>
-      <DialogTitle className="text-lg font-semibold">Edit Data Kosan</DialogTitle>
-      {/* <DialogDescription>
+            <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+              <DialogContent className="max-w-md w-full p-6 rounded-xl shadow-lg bg-white">
+                <DialogHeader>
+                  <DialogTitle className="text-lg font-semibold">
+                    Edit Data Kosan
+                  </DialogTitle>
+                  {/* <DialogDescription>
         Silakan ubah data kosan sesuai kebutuhan, lalu klik &quot;Simpan Perubahan&quot;.
       </DialogDescription> */}
-    </DialogHeader>
+                </DialogHeader>
 
-    <div className="mt-4 space-y-4">
-      {/* Nama Kosan */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Nama Kosan
-        </label>
-        <Input
-          placeholder="Masukkan nama kosan"
-          value={editData.nama || ""}
-          onChange={(e) =>
-            setEditData({ ...editData, nama: e.target.value })
-          }
-          aria-describedby="nama-desc"
-          className="mt-1"
-        />
-      </div>
+                <div className="mt-4 space-y-4">
+                  {/* Nama Kosan */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Nama Kosan
+                    </label>
+                    <Input
+                      placeholder="Masukkan nama kosan"
+                      value={editData.nama || ""}
+                      onChange={(e) =>
+                        setEditData({ ...editData, nama: e.target.value })
+                      }
+                      aria-describedby="nama-desc"
+                      className="mt-1"
+                    />
+                  </div>
 
-      {/* Harga */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Harga</label>
-        <Input
-          type="number"
-          placeholder="Masukkan harga per bulan"
-          value={editData.harga || ""}
-          onChange={(e) =>
-            setEditData({ ...editData, harga: Number(e.target.value) })
-          }
-          aria-describedby="harga-desc"
-          className="mt-1"
-        />
-      </div>
+                  {/* Harga */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Harga
+                    </label>
+                    <Input
+                      type="number"
+                      placeholder="Masukkan harga per bulan"
+                      value={editData.harga || ""}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          harga: Number(e.target.value),
+                        })
+                      }
+                      aria-describedby="harga-desc"
+                      className="mt-1"
+                    />
+                  </div>
 
-      {/* Jarak */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Jarak</label>
-        <Input
-          type="number"
-          placeholder="Masukkan jarak dari kampus/mall (km)"
-          value={editData.jarak || ""}
-          onChange={(e) =>
-            setEditData({ ...editData, jarak: Number(e.target.value) })
-          }
-          aria-describedby="jarak-desc"
-          className="mt-1"
-        />
-      </div>
+                  {/* Jarak */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Jarak
+                    </label>
+                    <Input
+                      type="number"
+                      placeholder="Masukkan jarak dari kampus/mall (km)"
+                      value={editData.jarak || ""}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          jarak: Number(e.target.value),
+                        })
+                      }
+                      aria-describedby="jarak-desc"
+                      className="mt-1"
+                    />
+                  </div>
 
-      {/* Fasilitas */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Fasilitas
-        </label>
-        <Input
-          type="number"
-          placeholder="Skor fasilitas 1-10"
-          value={editData.fasilitas || ""}
-          onChange={(e) =>
-            setEditData({ ...editData, fasilitas: Number(e.target.value) })
-          }
-          aria-describedby="fasilitas-desc"
-          className="mt-1"
-        />
-      </div>
+                  {/* Fasilitas */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Fasilitas
+                    </label>
+                    <Input
+                      type="number"
+                      placeholder="Skor fasilitas 1-10"
+                      value={editData.fasilitas || ""}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          fasilitas: Number(e.target.value),
+                        })
+                      }
+                      aria-describedby="fasilitas-desc"
+                      className="mt-1"
+                    />
+                  </div>
 
-      {/* Rating */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Rating</label>
-        <Input
-          type="number"
-          placeholder="Skor rating 1-5"
-          value={editData.rating || ""}
-          onChange={(e) =>
-            setEditData({ ...editData, rating: Number(e.target.value) })
-          }
-          aria-describedby="rating-desc"
-          className="mt-1"
-        />
-      </div>
+                  {/* Rating */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Rating
+                    </label>
+                    <Input
+                      type="number"
+                      placeholder="Skor rating 1-5"
+                      value={editData.rating || ""}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          rating: Number(e.target.value),
+                        })
+                      }
+                      aria-describedby="rating-desc"
+                      className="mt-1"
+                    />
+                  </div>
 
-      {/* Sistem Keamanan */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Sistem Keamanan
-        </label>
-        <Input
-          type="number"
-          placeholder="Skor keamanan 1-10"
-          value={editData.sistem_keamanan || ""}
-          onChange={(e) =>
-            setEditData({
-              ...editData,
-              sistem_keamanan: Number(e.target.value),
-            })
-          }
-          aria-describedby="keamanan-desc"
-          className="mt-1"
-        />
-        <p id="keamanan-desc" className="text-xs text-gray-500 mt-1">
-          Nilai sistem keamanan kosan dari 1 (rendah) hingga 10 (tinggi).
-        </p>
-      </div>
+                  {/* Sistem Keamanan */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Sistem Keamanan
+                    </label>
+                    <Input
+                      type="number"
+                      placeholder="Skor keamanan 1-10"
+                      value={editData.sistem_keamanan || ""}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          sistem_keamanan: Number(e.target.value),
+                        })
+                      }
+                      aria-describedby="keamanan-desc"
+                      className="mt-1"
+                    />
+                    <p
+                      id="keamanan-desc"
+                      className="text-xs text-gray-500 mt-1"
+                    >
+                      Nilai sistem keamanan kosan dari 1 (rendah) hingga 10
+                      (tinggi).
+                    </p>
+                  </div>
 
-      {/* Tombol Simpan */}
-      <Button
-        onClick={handleSaveEdit}
-        className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg"
-      >
-        Simpan Perubahan
-      </Button>
-    </div>
-  </DialogContent>
-</Dialog>
-
+                  {/* Tombol Simpan */}
+                  <Button
+                    onClick={handleSaveEdit}
+                    className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg"
+                  >
+                    Simpan Perubahan
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           <TabsContent value="bobot" className="space-y-6">
             <Card>
-      <CardHeader>
-        <CardTitle>Pengaturan Bobot Kriteria</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Sesuaikan bobot setiap kriteria sesuai prioritas Anda (Total:{" "}
-          {totalBobot}%)
-        </p>
-      </CardHeader>
+              <CardHeader>
+                <CardTitle>Pengaturan Bobot Kriteria</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Sesuaikan bobot setiap kriteria sesuai prioritas Anda (Total:{" "}
+                  {totalBobot}%)
+                </p>
+              </CardHeader>
 
-      <CardContent className="space-y-6">
-        {/* Grid Slider */}
-        <div className="grid md:grid-cols-3 gap-6">
-  {kriteriaList.map((k, index) => {
-    // ✅ Ganti baris ini dengan versi yang lebih aman
-    const keyNormalized = (k.nama ?? k.nama_kriteria ?? "")
-      .toLowerCase()
-      .replace(/\s+/g, "_");
+              <CardContent className="space-y-6">
+                {/* Grid Slider */}
+                <div className="grid md:grid-cols-3 gap-6">
+                  {kriteriaList.map((k, index) => {
+                    // ✅ Ganti baris ini dengan versi yang lebih aman
+                    const keyNormalized = (k.nama ?? k.nama_kriteria ?? "")
+                      .toLowerCase()
+                      .replace(/\s+/g, "_");
 
-    const icon = icons[keyNormalized] || null;
+                    const icon = icons[keyNormalized] || null;
 
-    return (
-      <div
-        key={index}
-        className="bg-white p-4 rounded-xl shadow flex flex-col items-center"
-      >
-        {/* Nama & Icon */}
-        <div className="flex flex-col items-center mb-3">
-          {icon}
-          <span className="font-medium text-gray-700 mt-1 text-center">
-            {k.nama ?? k.nama_kriteria}
-          </span>
-        </div>
+                    return (
+                      <div
+                        key={index}
+                        className="bg-white p-4 rounded-xl shadow flex flex-col items-center"
+                      >
+                        {/* Nama & Icon */}
+                        <div className="flex flex-col items-center mb-3">
+                          {icon}
+                          <span className="font-medium text-gray-700 mt-1 text-center">
+                            {k.nama ?? k.nama_kriteria}
+                          </span>
+                        </div>
 
+                        {/* Slider */}
+                        <Slider
+                          value={[k.bobot * 100]} // tampil 20%
+                          onValueChange={(v) => handleSliderChange(index, v[0])}
+                          max={100}
+                          step={5}
+                          className="w-full mt-2"
+                        />
 
-                {/* Slider */}
-                <Slider
-                  value={[k.bobot * 100]} // tampil 20%
-                  onValueChange={(v) => handleSliderChange(index, v[0])}
-                  max={100}
-                  step={5}
-                  className="w-full mt-2"
-                />
-
-                {/* Persentase */}
-                <div className="mt-1 text-sm font-medium">
-                  {(k.bobot * 100).toFixed(0)}%
+                        {/* Persentase */}
+                        <div className="mt-1 text-sm font-medium">
+                          {(k.bobot * 100).toFixed(0)}%
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-            );
-          })}
-        </div>
 
-        {/* Total Bobot */}
-        <div className="text-right font-medium">
-          Total Bobot:{" "}
-          <span
-            className={
-              totalBobot === 100 ? "text-green-600" : "text-red-500"
-            }
-          >
-            {totalBobot}%
-          </span>
-        </div>
+                {/* Total Bobot */}
+                <div className="text-right font-medium">
+                  Total Bobot:{" "}
+                  <span
+                    className={
+                      totalBobot === 100 ? "text-green-600" : "text-red-500"
+                    }
+                  >
+                    {totalBobot}%
+                  </span>
+                </div>
 
-        {/* Pie Chart */}
-        {/* Pie Chart */}
-<div className="h-64 mt-4">
-  <ResponsiveContainer width="100%" height="100%">
-    <PieChart>
-      <Pie
-        data={
-          kriteriaList.length > 0
-            ? kriteriaList.map((k) => {
-                const namaKriteria = k?.nama ?? k?.nama_kriteria ?? "Tidak diketahui";
-                const bobot = k.bobot ?? 0;
-                return {
-                    key: namaKriteria,
-                    value: bobot,
-                    displayValue: (bobot * 100).toFixed(0),
-                };
-            })
-            : Object.entries(bobotSementara).map(([nama, val]) => ({
-                key: nama,
-                value: val,
-                displayValue: (val * 100).toFixed(0),
-            }))
-        }
-        cx="50%"
-        cy="50%"
-        innerRadius={60}
-        outerRadius={100}
-        paddingAngle={5}
-        dataKey="value"
-        label={({ payload }) => `${payload.key}: ${payload.displayValue}%`}
-      >
-        {(kriteriaList.length > 0
-  ? kriteriaList
-  : Object.entries(bobotSementara).map(([nama, bobot]) => ({
-      nama,
-      bobot,
-    }))
-).map((k, index) => {
-  // Buat variabel nama yang aman
-  const namaKey: string =
-    "nama" in k
-      ? (k.nama ?? "")
-      : "nama_kriteria" in k
-      ? (k as { nama_kriteria?: string }).nama_kriteria ?? ""
-      : "";
+                {/* Pie Chart */}
+                {/* Pie Chart */}
+                <div className="h-64 mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={
+                          kriteriaList.length > 0
+                            ? kriteriaList.map((k) => {
+                                const namaKriteria =
+                                  k?.nama ??
+                                  k?.nama_kriteria ??
+                                  "Tidak diketahui";
+                                const bobot = k.bobot ?? 0;
+                                return {
+                                  key: namaKriteria,
+                                  value: bobot,
+                                  displayValue: (bobot * 100).toFixed(0),
+                                };
+                              })
+                            : Object.entries(bobotSementara).map(
+                                ([nama, val]) => ({
+                                  key: nama,
+                                  value: val,
+                                  displayValue: (val * 100).toFixed(0),
+                                })
+                              )
+                        }
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        dataKey="value"
+                        label={({ payload }) =>
+                          `${payload.key}: ${payload.displayValue}%`
+                        }
+                      >
+                        {(kriteriaList.length > 0
+                          ? kriteriaList
+                          : Object.entries(bobotSementara).map(
+                              ([nama, bobot]) => ({
+                                nama,
+                                bobot,
+                              })
+                            )
+                        ).map((k, index) => {
+                          // Buat variabel nama yang aman
+                          const namaKey: string =
+                            "nama" in k
+                              ? (k.nama ?? "")
+                              : "nama_kriteria" in k
+                                ? ((k as { nama_kriteria?: string })
+                                    .nama_kriteria ?? "")
+                                : "";
 
-  const lower = namaKey.toLowerCase();
+                          const lower = namaKey.toLowerCase();
 
-  // Warna berdasarkan nama
-  const colorMap: Record<string, string> = {
-    harga: "#8b5cf6",
-    jarak: "#06b6d4",
-    fasilitas: "#f59e0b",
-    rating: "#10b981",
-    sistem_keamanan: "#ef4444",
-  };
+                          // Warna berdasarkan nama
+                          const colorMap: Record<string, string> = {
+                            harga: "#8b5cf6",
+                            jarak: "#06b6d4",
+                            fasilitas: "#f59e0b",
+                            rating: "#10b981",
+                            sistem_keamanan: "#ef4444",
+                          };
 
-  const fallbackColors = ["#8b5cf6", "#06b6d4", "#f59e0b", "#10b981", "#ef4444"];
-  const color =
-    colorMap[lower] || fallbackColors[index % fallbackColors.length];
+                          const fallbackColors = [
+                            "#8b5cf6",
+                            "#06b6d4",
+                            "#f59e0b",
+                            "#10b981",
+                            "#ef4444",
+                          ];
+                          const color =
+                            colorMap[lower] ||
+                            fallbackColors[index % fallbackColors.length];
 
-  return <Cell key={`cell-${index}`} fill={color} />;
-})}
-      </Pie>
+                          return <Cell key={`cell-${index}`} fill={color} />;
+                        })}
+                      </Pie>
 
-      {/* Tooltip agar tampil nilai bobot saat hover */}
-      <Tooltip
-        formatter={(value: number) => `${(value * 100).toFixed(0)}%`}
-      />
-    </PieChart>
-  </ResponsiveContainer>
-</div>
-
-      </CardContent>
-    </Card>
+                      {/* Tooltip agar tampil nilai bobot saat hover */}
+                      <Tooltip
+                        formatter={(value: number) =>
+                          `${(value * 100).toFixed(0)}%`
+                        }
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="hasil" className="space-y-6">

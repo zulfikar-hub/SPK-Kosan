@@ -33,6 +33,14 @@ model kriteria {
   tipe          kriteria_tipe
 }
 
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  email     String   @unique
+  password  String   @db.VarChar(255)
+  createdAt DateTime @default(now())
+}
+
 enum kriteria_tipe {
   benefit
   cost

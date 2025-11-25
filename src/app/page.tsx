@@ -1,8 +1,18 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Navigation } from "@/components/navigation"
-import { CheckCircle, Calculator, BarChart3, FileText, MapPin, DollarSign, Star, Wifi, Shield } from "lucide-react"
-import Link from "next/link"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Navigation } from "@/components/navigation";
+import {
+  CheckCircle,
+  Calculator,
+  BarChart3,
+  FileText,
+  MapPin,
+  DollarSign,
+  Star,
+  Wifi,
+  Shield,
+} from "lucide-react";
+import Link from "next/link";
 
 export default function HomePage() {
   return (
@@ -16,11 +26,13 @@ export default function HomePage() {
             <div className="space-y-8">
               <div className="space-y-4">
                 <h1 className="text-4xl md:text-6xl font-bold text-balance leading-tight">
-                  Temukan Kosan Terbaik dengan Sistem Penunjang Keputusan <span className="text-primary">TOPSIS</span>
+                  Temukan Kosan Terbaik dengan Sistem Penunjang Keputusan{" "}
+                  <span className="text-primary">TOPSIS</span>
                 </h1>
                 <p className="text-xl text-muted-foreground text-pretty leading-relaxed">
-                  Bandingkan kosan berdasarkan harga, lokasi, fasilitas, dan kenyamanan. Semua perhitungan dilakukan
-                  otomatis dan transparan dengan metode TOPSIS berbasis Python.
+                  Bandingkan kosan berdasarkan harga, lokasi, fasilitas, dan
+                  kenyamanan. Semua perhitungan dilakukan otomatis dan
+                  transparan dengan metode TOPSIS berbasis Python.
                 </p>
               </div>
 
@@ -28,7 +40,12 @@ export default function HomePage() {
                 <Button size="lg" asChild className="text-lg px-8 py-6">
                   <Link href="/dashboard">Coba Sekarang</Link>
                 </Button>
-                <Button variant="outline" size="lg" asChild className="text-lg px-8 py-6 bg-transparent">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  asChild
+                  className="text-lg px-8 py-6 bg-transparent"
+                >
                   <Link href="/about">Pelajari Cara Kerja</Link>
                 </Button>
               </div>
@@ -66,9 +83,12 @@ export default function HomePage() {
       <section className="py-24 bg-muted/30">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Kenapa Menggunakan Sistem Ini?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Kenapa Menggunakan Sistem Ini?
+            </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Keputusan yang tepat membutuhkan analisis yang objektif dan sistematis
+              Keputusan yang tepat membutuhkan analisis yang objektif dan
+              sistematis
             </p>
           </div>
 
@@ -80,7 +100,8 @@ export default function HomePage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Pemilihan kosan dilakukan dengan pendekatan matematis, bukan hanya intuisi.
+                  Pemilihan kosan dilakukan dengan pendekatan matematis, bukan
+                  hanya intuisi.
                 </p>
               </CardContent>
             </Card>
@@ -92,7 +113,8 @@ export default function HomePage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Input data, atur bobot, dapatkan hasil ranking dalam hitungan detik.
+                  Input data, atur bobot, dapatkan hasil ranking dalam hitungan
+                  detik.
                 </p>
               </CardContent>
             </Card>
@@ -103,7 +125,9 @@ export default function HomePage() {
                 <CardTitle>Transparan</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Semua proses perhitungan TOPSIS dapat ditelusuri kembali.</p>
+                <p className="text-muted-foreground">
+                  Semua proses perhitungan TOPSIS dapat ditelusuri kembali.
+                </p>
               </CardContent>
             </Card>
 
@@ -113,7 +137,9 @@ export default function HomePage() {
                 <CardTitle>Fleksibel</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Bisa menyesuaikan bobot kriteria sesuai kebutuhan pengguna.</p>
+                <p className="text-muted-foreground">
+                  Bisa menyesuaikan bobot kriteria sesuai kebutuhan pengguna.
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -139,7 +165,9 @@ export default function HomePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground mb-4">Bandingkan kosan berdasarkan berbagai kriteria penting</p>
+                <p className="text-muted-foreground mb-4">
+                  Bandingkan kosan berdasarkan berbagai kriteria penting
+                </p>
                 <div className="flex flex-wrap gap-2">
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
                     <DollarSign className="h-3 w-3" />
@@ -174,7 +202,8 @@ export default function HomePage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Sesuaikan prioritas kriteria sesuai keinginan dan kebutuhan Anda
+                  Sesuaikan prioritas kriteria sesuai keinginan dan kebutuhan
+                  Anda
                 </p>
               </CardContent>
             </Card>
@@ -187,7 +216,10 @@ export default function HomePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Lihat hasil ranking dengan tabel dan grafik yang mudah dipahami</p>
+                <p className="text-muted-foreground">
+                  Lihat hasil ranking dengan tabel dan grafik yang mudah
+                  dipahami
+                </p>
               </CardContent>
             </Card>
 
@@ -200,7 +232,8 @@ export default function HomePage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Simpan hasil analisis dalam bentuk CSV atau PDF untuk dokumentasi
+                  Simpan hasil analisis dalam bentuk CSV atau PDF untuk
+                  dokumentasi
                 </p>
               </CardContent>
             </Card>
@@ -213,7 +246,9 @@ export default function HomePage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Cara Kerja</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">Proses sederhana dalam 4 langkah mudah</p>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Proses sederhana dalam 4 langkah mudah
+            </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -221,16 +256,24 @@ export default function HomePage() {
               <div className="w-16 h-16 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
                 1
               </div>
-              <h3 className="text-xl font-semibold mb-2">Masukkan Data Kosan</h3>
-              <p className="text-muted-foreground">Input informasi kosan yang ingin dibandingkan</p>
+              <h3 className="text-xl font-semibold mb-2">
+                Masukkan Data Kosan
+              </h3>
+              <p className="text-muted-foreground">
+                Input informasi kosan yang ingin dibandingkan
+              </p>
             </div>
 
             <div className="text-center">
               <div className="w-16 h-16 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
                 2
               </div>
-              <h3 className="text-xl font-semibold mb-2">Tentukan Bobot Kriteria</h3>
-              <p className="text-muted-foreground">Atur prioritas sesuai kebutuhan Anda</p>
+              <h3 className="text-xl font-semibold mb-2">
+                Tentukan Bobot Kriteria
+              </h3>
+              <p className="text-muted-foreground">
+                Atur prioritas sesuai kebutuhan Anda
+              </p>
             </div>
 
             <div className="text-center">
@@ -238,7 +281,9 @@ export default function HomePage() {
                 3
               </div>
               <h3 className="text-xl font-semibold mb-2">Sistem Menghitung</h3>
-              <p className="text-muted-foreground">Algoritma TOPSIS bekerja secara otomatis</p>
+              <p className="text-muted-foreground">
+                Algoritma TOPSIS bekerja secara otomatis
+              </p>
             </div>
 
             <div className="text-center">
@@ -246,7 +291,9 @@ export default function HomePage() {
                 4
               </div>
               <h3 className="text-xl font-semibold mb-2">Dapatkan Hasil</h3>
-              <p className="text-muted-foreground">Peringkat kosan terbaik sesuai preferensi</p>
+              <p className="text-muted-foreground">
+                Peringkat kosan terbaik sesuai preferensi
+              </p>
             </div>
           </div>
         </div>
@@ -255,11 +302,19 @@ export default function HomePage() {
       {/* CTA Section */}
       <section className="py-24 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Siap Menemukan Kosan Ideal Anda?</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Siap Menemukan Kosan Ideal Anda?
+          </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Mulai analisis sekarang dan temukan kosan terbaik dengan metode ilmiah yang terpercaya
+            Mulai analisis sekarang dan temukan kosan terbaik dengan metode
+            ilmiah yang terpercaya
           </p>
-          <Button size="lg" variant="secondary" asChild className="text-lg px-8 py-6">
+          <Button
+            size="lg"
+            variant="secondary"
+            asChild
+            className="text-lg px-8 py-6"
+          >
             <Link href="/dashboard">Mulai Analisis Gratis</Link>
           </Button>
         </div>
@@ -271,14 +326,19 @@ export default function HomePage() {
           <div className="text-center space-y-4">
             <p className="text-muted-foreground">
               Butuh integrasi dengan aplikasi kampus atau platform sewa kosan?{" "}
-              <a href="mailto:hello@domainanda.com" className="text-primary hover:underline">
+              <a
+                href="mailto:hello@domainanda.com"
+                className="text-primary hover:underline"
+              >
                 Hubungi kami di hello@domainanda.com
               </a>
             </p>
-            <p className="text-sm text-muted-foreground">© 2025 – Sistem Penunjang Keputusan Kosan TOPSIS</p>
+            <p className="text-sm text-muted-foreground">
+              © 2025 – Sistem Penunjang Keputusan Kosan TOPSIS
+            </p>
           </div>
         </div>
       </footer>
     </div>
-  )
+  );
 }
