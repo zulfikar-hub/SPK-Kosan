@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import Label from "@/components/ui/label";
+// import { Input } from "@/components/ui/input";
+// import Label from "@/components/ui/label";
 import Slider from "@/components/ui/slider";
 import { Navigation } from "@/components/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,8 +32,6 @@ import {
   Cell,
 } from "recharts";
 import {
-  Plus,
-  Trash2,
   Calculator,
   Download,
   Home,
@@ -41,18 +39,9 @@ import {
   DollarSign,
   Star,
   Wifi,
-  Pencil,
   Shield,
   Camera,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  // DialogDescription,
-} from "@/components/ui/dialog";
-
 interface KosanData {
   id_kosan: string;
   nama: string;
@@ -79,6 +68,7 @@ interface Kriteria {
   nama_kriteria?: string;
   bobot: number;
 }
+
 export default function DashboardPage() {
   useEffect(() => {
     const fetchKosan = async () => {
@@ -93,32 +83,12 @@ export default function DashboardPage() {
     };
     fetchKosan();
   }, []);
-
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editData, setEditData] = useState<Partial<KosanData>>({});
   const [kriteriaList, setKriteriaList] = useState<Kriteria[]>([]);
   const [bobotSementara, setBobotSementara] = useState<Record<string, number>>(
     {}
   );
   const [kosanList, setKosanList] = useState<KosanData[]>([]);
-  const [newKosan, setNewKosan] = useState<Omit<KosanData, "id_kosan">>({
-    nama: "",
-    harga: 0,
-    jarak: 0,
-    fasilitas: 0,
-    rating: 0,
-    sistem_keamanan: 0,
-  });
   const [hasCalculated, setHasCalculated] = useState(false);
-  const payload = {
-    id_kosan: editData.id_kosan, // wajib ada
-    nama: editData.nama,
-    harga: Number(editData.harga),
-    jarak: Number(editData.jarak),
-    fasilitas: Number(editData.fasilitas),
-    rating: Number(editData.rating),
-    sistem_keamanan: Number(editData.sistem_keamanan),
-  };
   useEffect(() => {
     const fetchKriteria = async () => {
       try {
@@ -146,6 +116,13 @@ export default function DashboardPage() {
     };
     fetchKriteria();
   }, []);
+const bobot: Bobot = {
+    harga: bobotSementara.harga ?? 25,
+    jarak: bobotSementara.jarak ?? 20,
+    fasilitas: bobotSementara.fasilitas ?? 20,
+    rating: bobotSementara.rating ?? 15,
+    sistem_keamanan: bobotSementara.sistem_keamanan ?? 20,
+  };
 
   // === FUNGSI TOPSIS ===
   const calculateTOPSIS = () => {
@@ -206,7 +183,6 @@ export default function DashboardPage() {
         sistem_KeamananNorm,
       };
     });
-
     // --- PEMBOBOTAN (pakai getWeight dan bagi 100 karena bobot disimpan persen) ---
     const weightedMatrix = normalizedMatrix.map((kosan) => ({
       ...kosan,
@@ -280,115 +256,17 @@ export default function DashboardPage() {
     setKosanList(updatedKosanList);
     setHasCalculated(true);
   };
-
-  // === Fungsi Tambah Kosan ===
-  const addKosan = async () => {
-    try {
-      if (
-        !newKosan.nama ||
-        newKosan.harga === undefined ||
-        newKosan.jarak === undefined ||
-        newKosan.fasilitas === undefined ||
-        newKosan.rating === undefined ||
-        newKosan.sistem_keamanan === undefined
-      ) {
-        alert("Mohon lengkapi semua data kosan sebelum menambah!");
-        return;
-      }
-
-      const payload = {
-        nama: newKosan.nama,
-        harga: Number(newKosan.harga),
-        jarak: Number(newKosan.jarak),
-        fasilitas: Number(newKosan.fasilitas),
-        rating: Number(newKosan.rating),
-        sistem_keamanan: Number(newKosan.sistem_keamanan),
-      };
-
-      const res = await fetch("/api/kosan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) throw new Error("Gagal menambah data kosan");
-
-      // ✅ setelah tambah, langsung ambil ulang data dari API
-      const updatedRes = await fetch("/api/kosan");
-      const updatedData = await updatedRes.json();
-      setKosanList(updatedData); // tampilkan hasil terbaru
-
-      alert("Data kosan berhasil ditambahkan!");
-    } catch (error) {
-      console.error(error);
-      alert("Terjadi kesalahan saat menambah data kosan");
-    }
-  };
-
-  // Hapus kosan
-  const removeKosan = async (id: string) => {
-    if (!confirm("Yakin ingin menghapus data kosan ini?")) return;
-    try {
-      const res = await fetch(`/api/kosan?id=${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Gagal hapus data kosan");
-      // Filter ulang data di state agar data yang dihapus hilang dari UI
-      setKosanList((prev) => prev.filter((k) => k.id_kosan !== id));
-      alert("Data kosan berhasil dihapus ✅");
-    } catch (error) {
-      console.error("Terjadi kesalahan saat menghapus kosan:", error);
-      alert("Terjadi kesalahan saat menghapus kosan ❌");
-    }
-  };
-  // Edit kosan
-  const handleEditClick = (kosan: KosanData) => {
-    setEditData(kosan);
-    setIsEditModalOpen(true);
-  };
-
-  const handleSaveEdit = async () => {
-    try {
-      const res = await fetch("/api/kosan", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("Gagal update kosan");
-
-      const updated = await res.json();
-
-      // Gunakan updated.data
-      setKosanList((prev) =>
-        prev.map((k) =>
-          k.id_kosan === updated.data.id_kosan ? updated.data : k
-        )
-      );
-
-      setIsEditModalOpen(false);
-    } catch (error) {
-      console.error(error);
-      alert("Gagal menyimpan perubahan");
-    }
-  };
-
   // === Data Chart ===
   const chartData = kosanList.map((kosan) => ({
     nama: kosan.nama,
     skor: kosan.skor || 0,
   }));
-  const bobot: Bobot = {
-    harga: bobotSementara.harga ?? 25,
-    jarak: bobotSementara.jarak ?? 20,
-    fasilitas: bobotSementara.fasilitas ?? 20,
-    rating: bobotSementara.rating ?? 15,
-    sistem_keamanan: bobotSementara.sistem_keamanan ?? 20,
-  };
   const totalBobot =
-    kriteriaList.length > 0
-      ? kriteriaList.reduce((sum, k) => sum + (k.bobot ?? 0) * 100, 0)
-      : Object.values(bobotSementara).reduce(
-          (sum, v) => sum + (v ?? 0) * 100,
-          0
-        );
+  kriteriaList.length > 0
+    ? kriteriaList.reduce((sum, k) => sum + (k.bobot ?? 0), 0)
+    : Object.values(bobotSementara).reduce((sum, v) => sum + (v ?? 0), 0);
+
+    const totalPersen = totalBobot * 100;
   // Ganti warna tiap segmen
   // const COLORS = ["#8b5cf6", "#06b6d4", "#f59e0b", "#10b981", "#ef4444"];
 
@@ -515,127 +393,6 @@ export default function DashboardPage() {
           <TabsContent value="data" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Tambah Data Kosan</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="nama">Nama Kosan</Label>
-                    <Input
-                      id="nama"
-                      value={newKosan.nama}
-                      onChange={(e) =>
-                        setNewKosan({ ...newKosan, nama: e.target.value })
-                      }
-                      placeholder="Masukkan nama kosan"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="harga">Harga (Rp)</Label>
-                    <Input
-                      id="harga"
-                      type="number"
-                      value={newKosan.harga || ""}
-                      onChange={(e) =>
-                        setNewKosan({
-                          ...newKosan,
-                          harga: Number(e.target.value),
-                        })
-                      }
-                      placeholder="800000"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="jarak">Jarak (km)</Label>
-                    <Input
-                      id="jarak"
-                      type="number"
-                      step="0.1"
-                      value={newKosan.jarak || ""}
-                      onChange={(e) =>
-                        setNewKosan({
-                          ...newKosan,
-                          jarak: Number(e.target.value),
-                        })
-                      }
-                      placeholder="2.5"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="fasilitas">Fasilitas (1-10)</Label>
-                    <Input
-                      id="fasilitas"
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={newKosan.fasilitas || ""}
-                      onChange={(e) =>
-                        setNewKosan({
-                          ...newKosan,
-                          fasilitas: Number(e.target.value),
-                        })
-                      }
-                      placeholder="8"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="rating">Rating (1-5)</Label>
-                    <Input
-                      id="rating"
-                      type="number"
-                      min="1"
-                      max="5"
-                      step="0.1"
-                      value={newKosan.rating || ""}
-                      onChange={(e) =>
-                        setNewKosan({
-                          ...newKosan,
-                          rating: Number(e.target.value),
-                        })
-                      }
-                      placeholder="4.5"
-                    />
-                  </div>
-                </div>
-
-                <div className="border-t pt-4">
-                  <h4 className="font-medium mb-3 flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-primary" />
-                    Sistem Keamanan (1-10)
-                  </h4>
-                  <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="sistem_keamanan">Sistem Keamanan</Label>
-                      <Input
-                        id="sistem_keamanan"
-                        type="number"
-                        min="1"
-                        max="10"
-                        value={newKosan.sistem_keamanan || ""}
-                        onChange={(e) =>
-                          setNewKosan({
-                            ...newKosan,
-                            sistem_keamanan: Number(e.target.value),
-                          })
-                        }
-                        placeholder="6"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        CCTV, alarm, security guard, akses kontrol
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <Button onClick={addKosan} className="w-full md:w-auto">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Tambah Kosan
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
                 <CardTitle>Daftar Kosan</CardTitle>
               </CardHeader>
               <CardContent>
@@ -648,7 +405,6 @@ export default function DashboardPage() {
                       <TableHead>Fasilitas</TableHead>
                       <TableHead>Rating</TableHead>
                       <TableHead>Sistem Keamanan</TableHead>
-                      <TableHead>Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -665,20 +421,6 @@ export default function DashboardPage() {
                         <TableCell>{kosan.rating}/5</TableCell>
                         <TableCell>{kosan.sistem_keamanan}/10</TableCell>
                         <TableCell className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditClick(kosan)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeKosan(kosan.id_kosan)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -686,152 +428,6 @@ export default function DashboardPage() {
                 </Table>
               </CardContent>
             </Card>
-            {/* Modal Edit Kosan */}
-            <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-              <DialogContent className="max-w-md w-full p-6 rounded-xl shadow-lg bg-white">
-                <DialogHeader>
-                  <DialogTitle className="text-lg font-semibold">
-                    Edit Data Kosan
-                  </DialogTitle>
-                  {/* <DialogDescription>
-        Silakan ubah data kosan sesuai kebutuhan, lalu klik &quot;Simpan Perubahan&quot;.
-      </DialogDescription> */}
-                </DialogHeader>
-
-                <div className="mt-4 space-y-4">
-                  {/* Nama Kosan */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Nama Kosan
-                    </label>
-                    <Input
-                      placeholder="Masukkan nama kosan"
-                      value={editData.nama || ""}
-                      onChange={(e) =>
-                        setEditData({ ...editData, nama: e.target.value })
-                      }
-                      aria-describedby="nama-desc"
-                      className="mt-1"
-                    />
-                  </div>
-
-                  {/* Harga */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Harga
-                    </label>
-                    <Input
-                      type="number"
-                      placeholder="Masukkan harga per bulan"
-                      value={editData.harga || ""}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          harga: Number(e.target.value),
-                        })
-                      }
-                      aria-describedby="harga-desc"
-                      className="mt-1"
-                    />
-                  </div>
-
-                  {/* Jarak */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Jarak
-                    </label>
-                    <Input
-                      type="number"
-                      placeholder="Masukkan jarak dari kampus/mall (km)"
-                      value={editData.jarak || ""}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          jarak: Number(e.target.value),
-                        })
-                      }
-                      aria-describedby="jarak-desc"
-                      className="mt-1"
-                    />
-                  </div>
-
-                  {/* Fasilitas */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Fasilitas
-                    </label>
-                    <Input
-                      type="number"
-                      placeholder="Skor fasilitas 1-10"
-                      value={editData.fasilitas || ""}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          fasilitas: Number(e.target.value),
-                        })
-                      }
-                      aria-describedby="fasilitas-desc"
-                      className="mt-1"
-                    />
-                  </div>
-
-                  {/* Rating */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Rating
-                    </label>
-                    <Input
-                      type="number"
-                      placeholder="Skor rating 1-5"
-                      value={editData.rating || ""}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          rating: Number(e.target.value),
-                        })
-                      }
-                      aria-describedby="rating-desc"
-                      className="mt-1"
-                    />
-                  </div>
-
-                  {/* Sistem Keamanan */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Sistem Keamanan
-                    </label>
-                    <Input
-                      type="number"
-                      placeholder="Skor keamanan 1-10"
-                      value={editData.sistem_keamanan || ""}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          sistem_keamanan: Number(e.target.value),
-                        })
-                      }
-                      aria-describedby="keamanan-desc"
-                      className="mt-1"
-                    />
-                    <p
-                      id="keamanan-desc"
-                      className="text-xs text-gray-500 mt-1"
-                    >
-                      Nilai sistem keamanan kosan dari 1 (rendah) hingga 10
-                      (tinggi).
-                    </p>
-                  </div>
-
-                  {/* Tombol Simpan */}
-                  <Button
-                    onClick={handleSaveEdit}
-                    className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg"
-                  >
-                    Simpan Perubahan
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
           </TabsContent>
 
           <TabsContent value="bobot" className="space-y-6">
@@ -885,19 +481,15 @@ export default function DashboardPage() {
                     );
                   })}
                 </div>
-
                 {/* Total Bobot */}
                 <div className="text-right font-medium">
-                  Total Bobot:{" "}
-                  <span
-                    className={
-                      totalBobot === 100 ? "text-green-600" : "text-red-500"
-                    }
-                  >
-                    {totalBobot}%
-                  </span>
-                </div>
-
+  Total Bobot:{" "}
+  <span
+    className={Math.round(totalPersen) === 100 ? "text-green-600" : "text-red-500"}
+  >
+    {Math.round(totalPersen)}%
+  </span>
+</div>
                 {/* Pie Chart */}
                 {/* Pie Chart */}
                 <div className="h-64 mt-4">
@@ -1004,6 +596,7 @@ export default function DashboardPage() {
                       : "Klik tombol hitung untuk memulai analisis"}
                   </p>
                 </div>
+                
                 <Button
                   onClick={calculateTOPSIS}
                   disabled={kosanList.length === 0}
@@ -1011,6 +604,7 @@ export default function DashboardPage() {
                   <Calculator className="h-4 w-4 mr-2" />
                   Hitung TOPSIS
                 </Button>
+
               </CardHeader>
               <CardContent>
                 {hasCalculated ? (

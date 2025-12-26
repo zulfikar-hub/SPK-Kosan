@@ -1,29 +1,62 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import { motion, easeOut,} from "framer-motion" // ✅ tambahkan ini
-import { Mail, Lock, Eye, EyeOff } from "lucide-react"
+import type React from "react";
+import { useState } from "react";
+import { motion, Variants, easeOut } from "framer-motion";
+import { Mail, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 interface LoginFormProps {
-  onToggleForm: () => void
+  role: "user" | "admin" | null;
+  onToggleForm: () => void;
+  onBackToRole: () => void;
 }
 
-export function LoginForm({ onToggleForm }: LoginFormProps) {
-  const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+export function LoginForm({ role, onToggleForm, onBackToRole }: LoginFormProps) {
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    // Simulasi proses login
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    setIsLoading(false)
+  e.preventDefault();
+  setIsLoading(true);
+
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || "Login gagal");
+      setIsLoading(false);
+      return;
+    }
+
+    // Simpan token
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("role", data.role);
+
+    // Redirect sesuai role
+    if (data.role?.toLowerCase() === "admin") {
+  window.location.href = "/admin";
+  return;
+}
+
+window.location.href = "/dashboard";
+
+  } catch (error) {
+    console.error(error);
+    alert("Terjadi kesalahan server");
   }
 
-  const containerVariants = {
+  setIsLoading(false);
+};
+
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -32,17 +65,39 @@ export function LoginForm({ onToggleForm }: LoginFormProps) {
         delayChildren: 0.2,
       },
     },
-  }
+  };
 
-  // ✅ Ubah ease jadi import `easeOut` agar sesuai framer-motion v12+
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
       transition: { duration: 0.5, ease: easeOut },
     },
-  }
+  };
+
+  const roleConfig = {
+    user: {
+      title: "Login Pencari Kosan",
+      subtitle: "Selamat datang kembali",
+      buttonText: "Masuk ke Akun",
+      gradientFrom: "from-blue-500",
+      gradientTo: "to-blue-600",
+      hoverFrom: "hover:from-blue-600",
+      hoverTo: "hover:to-blue-700",
+    },
+    admin: {
+      title: "Login Pemilik Kosan",
+      subtitle: "Kelola properti Anda",
+      buttonText: "Masuk ke Dashboard",
+      gradientFrom: "from-purple-500",
+      gradientTo: "to-purple-600",
+      hoverFrom: "hover:from-purple-600",
+      hoverTo: "hover:to-purple-700",
+    },
+  };
+
+  const config = role ? roleConfig[role] : roleConfig.user;
 
   return (
     <motion.div
@@ -50,13 +105,15 @@ export function LoginForm({ onToggleForm }: LoginFormProps) {
       initial={{ opacity: 0, x: 50 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -50 }}
-      transition={{ duration: 0.4, ease: easeOut }} // ✅ ubah di sini juga
+      transition={{ duration: 0.4, ease: easeOut }}
     >
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
         {/* Header */}
         <motion.div variants={itemVariants} className="text-center space-y-2">
           <div className="flex items-center justify-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+            <div
+              className={`w-10 h-10 bg-gradient-to-br ${role === "admin" ? "from-purple-500 to-purple-600" : "from-blue-500 to-blue-600"} rounded-lg flex items-center justify-center`}
+            >
               <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
               </svg>
@@ -65,7 +122,7 @@ export function LoginForm({ onToggleForm }: LoginFormProps) {
               KosanHub
             </h1>
           </div>
-          <p className="text-sm text-slate-600">Selamat datang kembali</p>
+          <p className="text-sm text-slate-600">{config.subtitle}</p>
         </motion.div>
 
         {/* Glassmorphism Card */}
@@ -140,20 +197,20 @@ export function LoginForm({ onToggleForm }: LoginFormProps) {
               whileTap={{ scale: 0.98 }}
               disabled={isLoading}
               type="submit"
-              className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className={`w-full py-3 bg-gradient-to-r ${config.gradientFrom} ${config.gradientTo} text-white font-semibold rounded-xl ${config.hoverFrom} ${config.hoverTo} transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
             >
               {isLoading ? (
                 <>
                   <motion.div
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }} // ✅ ubah ini juga
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   >
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full" />
                   </motion.div>
                   Masuk...
                 </>
               ) : (
-                "Masuk ke Akun"
+                config.buttonText
               )}
             </motion.button>
 
@@ -183,6 +240,16 @@ export function LoginForm({ onToggleForm }: LoginFormProps) {
           </motion.form>
         </motion.div>
 
+        {/* Back to Role Selector */}
+        <motion.button
+          variants={itemVariants}
+          onClick={onBackToRole}
+          className="w-full flex items-center justify-center gap-2 text-slate-600 hover:text-slate-800 transition-colors font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Kembali ke pemilihan tipe akun
+        </motion.button>
+
         {/* Footer Info */}
         <motion.div variants={itemVariants} className="text-center text-xs text-slate-500 space-y-1">
           <p>Sistem manajemen kosan yang aman dan terpercaya</p>
@@ -190,5 +257,5 @@ export function LoginForm({ onToggleForm }: LoginFormProps) {
         </motion.div>
       </motion.div>
     </motion.div>
-  )
+  );
 }

@@ -5,38 +5,30 @@ const prisma = new PrismaClient();
 
 export async function GET() {
   try {
-    // Ambil hasil topsis dan join dengan nama kosan
-    const hasil = await prisma.hasilTopsis.findMany({
+    const data = await prisma.hasilTopsis.findMany({
       include: {
         kosan: {
-          select: { nama: true },
+          select: {
+            nama: true,
+          },
         },
       },
-      orderBy: { ranking: "asc" },
+      orderBy: {
+        ranking: "asc",
+      },
     });
 
-    if (!hasil.length) {
-      return NextResponse.json({
-        message: "Belum ada hasil TOPSIS. Jalankan /api/topsis terlebih dahulu.",
-      });
-    }
-
-    // Format output
-    const formatted = hasil.map((h) => ({
-      ranking: h.ranking,
-      nama_kosan: h.kosan?.nama,
-      nilai_preferensi: Number(h.nilai_preferensi).toFixed(4),
+    const result = data.map((item) => ({
+      name: item.kosan.nama,
+      value: item.nilai_preferensi.toNumber(), // ✅ TOPSIS SCORE
+      ranking: item.ranking,
     }));
 
-    return NextResponse.json({
-      message: "Hasil perhitungan TOPSIS dari database 📊",
-      total_data: hasil.length,
-      hasil: formatted,
-    });
+    return NextResponse.json(result);
   } catch (error) {
-    console.error("Error mengambil hasil TOPSIS:", error);
+    console.error("❌ ERROR TOPSIS API:", error);
     return NextResponse.json(
-      { error: "Terjadi kesalahan server." },
+      { error: "Gagal mengambil data TOPSIS" },
       { status: 500 }
     );
   }

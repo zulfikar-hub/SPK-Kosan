@@ -3,45 +3,90 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model hasiltopsis {
-  id_hasil         Int     @id @default(autoincrement())
-  id_kosan         Int     @unique(map: "HasilTopsis_id_kosan_key")
-  nilai_preferensi Decimal @db.Decimal(10, 4)
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model HasilTopsis {
+  id_hasil         Int      @id @default(autoincrement())
+  id_kosan         Int
+  nilai_preferensi Decimal  @db.Decimal(10, 4)
   ranking          Int
-  kosan            kosan   @relation(fields: [id_kosan], references: [id_kosan], onDelete: Cascade, map: "HasilTopsis_id_kosan_fkey")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  kosan            Kosan    @relation(fields: [id_kosan], references: [id_kosan])
+
+  @@map("hasiltopsis") // nama tabel database kamu
 }
 
-model kosan {
-  id_kosan        Int          @id @default(autoincrement())
-  nama            String       @db.VarChar(100)
-  harga           Decimal      @db.Decimal(10, 2)
-  jarak           Decimal      @db.Decimal(10, 2)
-  fasilitas       Decimal      @db.Decimal(10, 2)
-  rating          Decimal      @db.Decimal(10, 2)
-  sistem_keamanan Decimal      @db.Decimal(10, 2)
-  hasiltopsis     hasiltopsis?
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model Kosan {
+  id_kosan            Int       @id @default(autoincrement())
+  nama                String    @db.VarChar(100)
+  harga               Decimal   @db.Decimal(10, 2)
+  jarak               Decimal   @db.Decimal(10, 2)
+  fasilitas           Decimal   @db.Decimal(10, 2)
+  rating              Float
+  sistem_keamanan     Decimal   @db.Decimal(10, 2)
+  createdAt           DateTime  @default(now())
+  description         String?
+  ranking             Int       @default(0)
+  updatedAt           DateTime  @updatedAt
+  status_ketersediaan StatusKetersediaan @default(TERSEDIA)
+  status_operasional  StatusOperasional  @default(AKTIF)
+
+  hasiltopsis         HasilTopsis[]
+
+  @@map("kosan") // nama tabel database
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model kriteria {
-  id_kriteria   Int           @id @default(autoincrement())
+  id_kriteria   Int     @id      @default(autoincrement())
   nama_kriteria String        @db.VarChar(50)
   bobot         Decimal       @db.Decimal(5, 2)
   tipe          kriteria_tipe
+  deskripsi     String?       @default("")
+
 }
 
-model User {
-  id        Int      @id @default(autoincrement())
-  name      String   @db.VarChar(100)
-  email     String   @unique
-  password  String   @db.VarChar(255)
-  createdAt DateTime @default(now())
+model user {
+  id        Int    @id    @default(autoincrement())
+  name      String
+  email     String      @unique
+  password  String
+  createdAt DateTime    @default(now())
+  role      user_role   @default(USER)
+  updatedAt DateTime    @updatedAt
+  status    user_status @default(AKTIF)
+
+  @@map ("user")
+}
+
+enum StatusKetersediaan {
+  TERSEDIA
+  PENUH
+  PERAWATAN
+}
+
+enum StatusOperasional {
+  AKTIF
+  INAKTIF
 }
 
 enum kriteria_tipe {
   benefit
   cost
+}
+
+enum user_role {
+  ADMIN
+  USER
+}
+
+enum user_status {
+  AKTIF
+  INAKTIF
 }

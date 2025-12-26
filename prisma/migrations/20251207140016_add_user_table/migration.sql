@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE `kriteria` MODIFY `deskripsi` VARCHAR(191) NULL DEFAULT '';
+
+-- AlterTable
+ALTER TABLE `user` ADD COLUMN `status` ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE';
