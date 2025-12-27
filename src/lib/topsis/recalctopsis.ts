@@ -2,7 +2,9 @@ import prisma from "@/lib/prisma";
 
 export async function recalcTopsis() {
   const data = await prisma.kosan.findMany({
-    where: { status: "aktif" }
+    where: {
+      status_operasional: "AKTIF",
+    },
   });
 
   if (data.length === 0) return;
