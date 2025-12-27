@@ -35,7 +35,6 @@ export async function POST(request: Request) {
       system: systemPrompt,
       prompt: message,
       temperature: 0.7,
-      // maxTokens: 500,
     })
 
     let fullText = ""
