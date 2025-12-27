@@ -2,12 +2,15 @@
 
 import React, { ReactNode, FC, useState } from "react";
 
-// ===== Accordion Utama =====
+/* ======================================================
+   Accordion (Root)
+====================================================== */
+
 interface AccordionProps {
   children: ReactNode;
   className?: string;
-  type?: "single" | "multiple"; // single: hanya 1 terbuka, multiple: bisa banyak
-  collapsible?: boolean; // true: bisa ditutup
+  type?: "single" | "multiple";
+  collapsible?: boolean;
 }
 
 export const Accordion: FC<AccordionProps> = ({
@@ -26,17 +29,20 @@ export const Accordion: FC<AccordionProps> = ({
         setOpenItems([value]);
       }
     } else {
-      if (openItems.includes(value)) {
-        setOpenItems(openItems.filter((v) => v !== value));
-      } else {
-        setOpenItems([...openItems, value]);
-      }
+      setOpenItems((prev) =>
+        prev.includes(value)
+          ? prev.filter((v) => v !== value)
+          : [...prev, value]
+      );
     }
   };
 
   const enhancedChildren = React.Children.map(children, (child) => {
-    if (React.isValidElement(child)) {
-      return React.cloneElement(child, { openItems, toggleItem });
+    if (React.isValidElement<AccordionItemProps>(child)) {
+      return React.cloneElement(child, {
+        openItems,
+        toggleItem,
+      });
     }
     return child;
   });
@@ -44,7 +50,10 @@ export const Accordion: FC<AccordionProps> = ({
   return <div className={className}>{enhancedChildren}</div>;
 };
 
-// ===== Item Accordion =====
+/* ======================================================
+   Accordion Item
+====================================================== */
+
 interface AccordionItemProps {
   children: ReactNode;
   value: string;
@@ -57,29 +66,42 @@ export const AccordionItem: FC<AccordionItemProps> = ({
   children,
   value,
   className,
-  openItems,
+  openItems = [],
   toggleItem,
 }) => {
-  const isOpen = openItems?.includes(value) ?? false;
+  const isOpen = openItems.includes(value);
 
-  return (
-    <div className={className}>
-      {React.Children.map(children, (child) => {
-        if (React.isValidElement(child)) {
-          return React.cloneElement(child, { isOpen, value, toggleItem });
-        }
-        return child;
-      })}
-    </div>
-  );
+  const enhancedChildren = React.Children.map(children, (child) => {
+    if (React.isValidElement<AccordionItemChildProps>(child)) {
+      return React.cloneElement(child, {
+        isOpen,
+        value,
+        toggleItem,
+      });
+    }
+    return child;
+  });
+
+  return <div className={className}>{enhancedChildren}</div>;
 };
 
-// ===== Trigger Accordion =====
-interface AccordionTriggerProps {
-  children: ReactNode;
-  className?: string;
+/* ======================================================
+   Shared props untuk Trigger & Content
+====================================================== */
+
+interface AccordionItemChildProps {
+  isOpen?: boolean;
   value?: string;
   toggleItem?: (value: string) => void;
+}
+
+/* ======================================================
+   Accordion Trigger
+====================================================== */
+
+interface AccordionTriggerProps extends AccordionItemChildProps {
+  children: ReactNode;
+  className?: string;
 }
 
 export const AccordionTrigger: FC<AccordionTriggerProps> = ({
@@ -88,22 +110,24 @@ export const AccordionTrigger: FC<AccordionTriggerProps> = ({
   value,
   toggleItem,
 }) => {
-  const handleClick = () => {
-    if (toggleItem && value) toggleItem(value);
-  };
-
   return (
-    <button onClick={handleClick} className={className}>
+    <button
+      type="button"
+      onClick={() => value && toggleItem?.(value)}
+      className={className}
+    >
       {children}
     </button>
   );
 };
 
-// ===== Konten Accordion =====
-interface AccordionContentProps {
+/* ======================================================
+   Accordion Content
+====================================================== */
+
+interface AccordionContentProps extends AccordionItemChildProps {
   children: ReactNode;
   className?: string;
-  isOpen?: boolean;
 }
 
 export const AccordionContent: FC<AccordionContentProps> = ({
@@ -111,5 +135,6 @@ export const AccordionContent: FC<AccordionContentProps> = ({
   className,
   isOpen,
 }) => {
-  return isOpen ? <div className={className}>{children}</div> : null;
+  if (!isOpen) return null;
+  return <div className={className}>{children}</div>;
 };
