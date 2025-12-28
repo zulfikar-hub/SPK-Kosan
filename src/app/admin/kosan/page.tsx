@@ -264,7 +264,7 @@ export default function KosanPage() {
             // 📌 PERBAIKAN 6: Menggunakan URL Query Parameter untuk DELETE
             const res = await fetch(`/api/kosan?id=${id_kosan}`, { 
                 method: "DELETE",
-                credentials: "include"
+                credentials: "include",
             }); 
             
             if (!res.ok) {
