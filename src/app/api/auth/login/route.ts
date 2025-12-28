@@ -5,14 +5,13 @@ import prisma from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json() as {
-      identifier: string; // bisa email atau username
+    const body = (await req.json()) as {
+      identifier: string; // email atau username
       password: string;
     };
 
     const { identifier, password } = body;
 
-    // Validasi input
     if (!identifier || !password) {
       return NextResponse.json(
         { error: "Email/Username dan password wajib diisi" },
@@ -23,10 +22,7 @@ export async function POST(req: Request) {
     // Cari user berdasarkan email atau username
     const user = await prisma.user.findFirst({
       where: {
-        OR: [
-          { email: identifier },
-          { name: identifier } // username disini pakai field 'name'
-        ],
+        OR: [{ email: identifier }, { name: identifier }],
       },
     });
 
@@ -34,6 +30,14 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "User tidak ditemukan" },
         { status: 401 }
+      );
+    }
+
+    if (!user.password) {
+      console.error("LOGIN ERROR: User password kosong!", user);
+      return NextResponse.json(
+        { error: "User password tidak tersedia" },
+        { status: 500 }
       );
     }
 
@@ -46,14 +50,19 @@ export async function POST(req: Request) {
       );
     }
 
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error("LOGIN ERROR: JWT_SECRET belum di-set di .env");
+      return NextResponse.json(
+        { error: "Server belum dikonfigurasi dengan benar" },
+        { status: 500 }
+      );
+    }
+
     // Generate JWT token
     const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      },
-      process.env.JWT_SECRET!,
+      { id: user.id, email: user.email, role: user.role },
+      jwtSecret,
       { expiresIn: "1d" }
     );
 
