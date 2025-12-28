@@ -7,25 +7,32 @@ export function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
   // ================================
-  // 🔓 API PUBLIC (TANPA LOGIN)
+  // 🔓 PUBLIC ROUTES (TANPA LOGIN)
   // ================================
-  const publicApiRoutes = [
-    "/api/auth/login",
-    "/api/auth/register",
-    "/api/kosan",
-    "/api/kriteria",
-    "/api/topsis",
-    "/api/hasil-topsis",
+  const publicRoutes = [
+    "/login",
+    "/register",
+    "/",
   ];
 
-  if (publicApiRoutes.some(route => pathname.startsWith(route))) {
+  if (publicRoutes.includes(pathname)) {
     return NextResponse.next();
   }
 
   // ================================
-  // 🔐 ADMIN PAGE
+  // 🔓 PUBLIC API
   // ================================
-  if (pathname.startsWith("/admin")) {
+  if (
+    pathname.startsWith("/api/auth/login") ||
+    pathname.startsWith("/api/auth/register")
+  ) {
+    return NextResponse.next();
+  }
+
+  // ================================
+  // 🔐 ADMIN & DASHBOARD (WAJIB LOGIN)
+  // ================================
+  if (pathname.startsWith("/admin") || pathname.startsWith("/dashboard")) {
     if (!token) {
       return NextResponse.redirect(
         new URL("/login?error=unauthorized", req.url)
@@ -33,30 +40,27 @@ export function middleware(req: NextRequest) {
     }
 
     try {
-      const decoded = jwt.verify(
-        token,
-        process.env.JWT_SECRET!
-      ) as { role: string };
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+        role: string;
+      };
 
-      // ✅ ROLE HARUS KONSISTEN
-      if (decoded.role !== "ADMIN") {
+      // 🔐 KHUSUS ADMIN
+      if (pathname.startsWith("/admin") && decoded.role !== "admin") {
         return NextResponse.redirect(
           new URL("/login?error=forbidden", req.url)
         );
       }
-    } catch {
-      return NextResponse.redirect(
-        new URL("/login?error=invalid-token", req.url)
-      );
-    }
+    } catch (err) {
+  console.error("JWT ERROR:", err);
+  return NextResponse.redirect(
+    new URL("/login?error=invalid-token", req.url)
+  );
+}
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    "/api/:path*",
-    "/admin/:path*",
-  ],
+  matcher: ["/admin/:path*", "/dashboard/:path*"],
 };
