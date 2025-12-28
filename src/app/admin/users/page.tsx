@@ -32,14 +32,16 @@ export default function UsersPage() {
 
   // Ambil data pengguna dari API
   const fetchUsers = async () => {
-    try {
-      const res = await axios.get("/api/users")
-      setUsers(res.data)
-    } catch (err) {
-      console.error(err)
-      toast.error("Gagal mengambil data pengguna")
-    }
+  try {
+    const res = await axios.get("/api/users", {
+      withCredentials: true, // 🔐 WAJIB
+    });
+    setUsers(res.data);
+  } catch (err) {
+    console.error(err);
+    toast.error("Gagal mengambil data pengguna");
   }
+};
 
   useEffect(() => {
     fetchUsers()
@@ -47,43 +49,60 @@ export default function UsersPage() {
 
   // Tambah pengguna
   const handleAddUser = async (data: UserFormData) => {
-    try {
-      const res = await axios.post("/api/users", data)
-      setUsers((prev) => [...prev, res.data.data])
-      setAddModalOpen(false)
-      toast.success("Pengguna berhasil ditambahkan")
-    } catch (err) {
-      console.error(err)
-      toast.error("Gagal menambahkan pengguna")
-    }
+  try {
+    const res = await axios.post(
+      "/api/users",
+      data,
+      { withCredentials: true } // 🔐 WAJIB
+    );
+
+    setUsers(prev => [...prev, res.data.data]);
+    setAddModalOpen(false);
+    toast.success("Pengguna berhasil ditambahkan");
+  } catch (err) {
+    console.error(err);
+    toast.error("Gagal menambahkan pengguna");
   }
+};
 
   // Update pengguna
   const handleUpdateUser = async (id: number, data: UserFormData) => {
-    try {
-      const res = await axios.put("/api/users", { id, ...data })
-      const updated = res.data.data
-      setUsers((prev) => prev.map(u => u.id === id ? { ...u, ...updated } : u))
-      toast.success("Pengguna berhasil diupdate")
-    } catch (err) {
-      console.error(err)
-      toast.error("Gagal update pengguna")
-    }
+  try {
+    const res = await axios.put(
+      "/api/users",
+      { id, ...data },
+      { withCredentials: true } // 🔐 WAJIB
+    );
+
+    const updated = res.data.data;
+    setUsers(prev =>
+      prev.map(u => (u.id === id ? { ...u, ...updated } : u))
+    );
+
+    toast.success("Pengguna berhasil diupdate");
+  } catch (err) {
+    console.error(err);
+    toast.error("Gagal update pengguna");
   }
+};
+
 
   // Hapus pengguna
   const handleDeleteUser = async (id: number) => {
-    try {
-      await axios.delete(`/api/users?id=${id}`)
-      setUsers((prev) => prev.filter((u) => u.id !== id))
-      setDeleteModalOpen(false)
-      setSelectedId(null)
-      toast.success("Pengguna berhasil dihapus")
-    } catch (err) {
-      console.error(err)
-      toast.error("Gagal menghapus pengguna")
-    }
+  try {
+    await axios.delete(`/api/users?id=${id}`, {
+      withCredentials: true, // 🔐 WAJIB
+    });
+
+    setUsers(prev => prev.filter(u => u.id !== id));
+    setDeleteModalOpen(false);
+    setSelectedId(null);
+    toast.success("Pengguna berhasil dihapus");
+  } catch (err) {
+    console.error(err);
+    toast.error("Gagal menghapus pengguna");
   }
+};
 
   return (
     <div className="flex">

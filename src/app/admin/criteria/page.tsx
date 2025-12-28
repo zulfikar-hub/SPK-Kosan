@@ -31,14 +31,16 @@ export default function CriteriaPage() {
 
   // Ambil data kriteria dari API
   const fetchCriteria = async () => {
-    try {
-      const res = await axios.get("/api/kriteria")
-      setCriteria(res.data)
-    } catch (err) {
-      console.error(err)
-      toast.error("Gagal mengambil data kriteria")
-    }
+  try {
+    const res = await axios.get("/api/kriteria", {
+      withCredentials: true, // 🔐 WAJIB
+    });
+    setCriteria(res.data);
+  } catch (err) {
+    console.error(err);
+    toast.error("Gagal mengambil data kriteria");
   }
+};
 
   useEffect(() => {
     fetchCriteria()
@@ -46,36 +48,51 @@ export default function CriteriaPage() {
 
   // Tambah kriteria
   const handleAddCriteria = async (data: CriteriaFormData) => {
-    try {
-      const res = await axios.post("/api/kriteria", {
+  try {
+    const res = await axios.post(
+      "/api/kriteria",
+      {
         nama_kriteria: data.nama,
         bobot: data.bobot,
         tipe: data.tipe,
         deskripsi: data.deskripsi,
-      })
-      setCriteria((prev) => [...prev, res.data.data])
-      toast.success("Kriteria berhasil ditambahkan")
-    } catch (err) {
-      console.error(err)
-      toast.error("Gagal menambahkan kriteria")
-    }
+      },
+      {
+        withCredentials: true, // 🔐 WAJIB
+      }
+    );
+
+    setCriteria(prev => [...prev, res.data.data]);
+    toast.success("Kriteria berhasil ditambahkan");
+  } catch (err) {
+    console.error(err);
+    toast.error("Gagal menambahkan kriteria");
   }
+};
+
+
 
   // Update kriteria
   const handleUpdateCriteria = async (id: number, data: CriteriaFormData) => {
   try {
-    const res = await axios.put("/api/kriteria", {
-      id_kriteria: id,
-      nama_kriteria: data.nama,
-      tipe: data.tipe,
-      bobot: data.bobot,
-      deskripsi: data.deskripsi,
-    });
-
+    const res = await axios.put(
+      "/api/kriteria",
+      {
+        id_kriteria: id,
+        nama_kriteria: data.nama,
+        tipe: data.tipe,
+        bobot: data.bobot,
+        deskripsi: data.deskripsi,
+      },
+      {
+        withCredentials: true, // 🔐 WAJIB
+      }
+    );
     const updated = res.data.data;
     setCriteria(prev =>
       prev.map(c => (c.id_kriteria === id ? { ...c, ...updated } : c))
     );
+
     toast.success("Kriteria berhasil diupdate");
   } catch (err) {
     console.error(err);
@@ -83,20 +100,23 @@ export default function CriteriaPage() {
   }
 };
 
+// Hapus kriteria
+const handleDeleteCriteria = async (id: number) => {
+  try {
+    await axios.delete(`/api/kriteria?id=${id}`, {
+      withCredentials: true, // 🔐 WAJIB
+    });
 
-  // Hapus kriteria
-  const handleDeleteCriteria = async (id: number) => {
-    try {
-      await axios.delete(`/api/kriteria?id=${id}`)
-      setCriteria(prev => prev.filter(c => c.id_kriteria !== id))
-      setDeleteModalOpen(false)
-      setSelectedId(null)
-      toast.success("Kriteria berhasil dihapus")
-    } catch (err) {
-      console.error(err)
-      toast.error("Gagal menghapus kriteria")
-    }
+    setCriteria(prev => prev.filter(c => c.id_kriteria !== id));
+    setDeleteModalOpen(false);
+    setSelectedId(null);
+    toast.success("Kriteria berhasil dihapus");
+  } catch (err) {
+    console.error(err);
+    toast.error("Gagal menghapus kriteria");
   }
+};
+
 
   return (
     <div className="flex">

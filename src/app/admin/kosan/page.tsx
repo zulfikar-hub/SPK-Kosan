@@ -212,6 +212,7 @@ export default function KosanPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
+                credentials: "include",
             });
             
             if (!res.ok) throw new Error(`Gagal menambah kosan. Status: ${res.status}`);
@@ -241,7 +242,8 @@ export default function KosanPage() {
                 headers: { "Content-Type": "application/json" },
                 // Kirim id_kosan dan data yang diupdate
                 body: JSON.stringify({ id_kosan: editingKosan.id_kosan, ...data }), 
-            });
+                credentials: "include",     
+           });
             
             if (!res.ok) throw new Error(`Gagal mengedit kosan. Status: ${res.status}`);
 
@@ -260,7 +262,10 @@ export default function KosanPage() {
     const handleDeleteKosan = async (id_kosan: number) => {
         try {
             // 📌 PERBAIKAN 6: Menggunakan URL Query Parameter untuk DELETE
-            const res = await fetch(`/api/kosan?id=${id_kosan}`, { method: "DELETE" }); 
+            const res = await fetch(`/api/kosan?id=${id_kosan}`, { 
+                method: "DELETE",
+                credentials: "include"
+            }); 
             
             if (!res.ok) {
                 const errorData = await res.json();
@@ -281,46 +286,36 @@ export default function KosanPage() {
 
     // --- Toggle status kosan
     const handleStatusToggle = async (id_kosan: number) => {
-        try {
-            // Kirim request PUT ke /api/kosan dengan toggleStatus: true
-            const res = await axios.put("/api/kosan", { id_kosan, toggleStatus: true });
-            
-            if (res.status !== 200) {
-                throw new Error(`Gagal mengubah status. Status: ${res.status}`);
-            }
-            // 📌 PERBAIKAN 7: Akses status_operasional dari response data
-            const updatedKosan = res.data.data; 
-            
-            // Pembaruan Status Lokal Instan
-            setKosanList(prev =>
-                Array.isArray(prev) 
-                    ? prev.map(k => (
-                        k.id_kosan === id_kosan 
-                            ? { 
-                                ...k, 
-                                status_operasional: updatedKosan.status_operasional, // Gunakan status_operasional baru
-                                hasiltopsis: k.hasiltopsis 
-                            } 
-                            : k
-                    ))
-                : []
-            );
-            
-            // Perbarui status map untuk Summary
-            setKosanStatus(prev => ({
-                ...prev, 
-                [id_kosan]: updatedKosan.status_operasional
-            }));
+  try {
+    const res = await axios.put(
+      "/api/kosan",
+      { id_kosan, toggleStatus: true },
+      { withCredentials: true } // 🔐 WAJIB
+    );
 
-            toast.success("Status berhasil diubah!");
+    if (res.status !== 200) {
+      throw new Error(`Gagal mengubah status. Status: ${res.status}`);
+    }
 
-            await recalculateTopsis(); // Lakukan recalc TOPSIS setelah update status
-        } catch (err) {
-            console.error("Gagal toggle status:", err);
-            toast.error("Gagal mengubah status!");
-        }
-    };
+    const updatedKosan = res.data.data;
 
+    setKosanList(prev =>
+      Array.isArray(prev)
+        ? prev.map(k =>
+            k.id_kosan === id_kosan
+              ? {
+                  ...k,
+                  status_operasional: updatedKosan.status_operasional,
+                  hasiltopsis: k.hasiltopsis,
+                }
+              : k
+          )
+        : []
+    );
+  } catch (err) {
+    console.error("Gagal mengubah status kosan", err);
+  }
+};
     // helper untuk menampilkan rata-rata TOPSIS
     const averageTopsis = useMemo(() => {
         if (!Array.isArray(kosanList) || kosanList.length === 0) {
