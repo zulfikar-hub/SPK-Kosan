@@ -95,11 +95,11 @@ export function Navigation() {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="absolute top-16 left-0 w-full bg-background border-b md:hidden shadow-xl"
-          >
+  initial={{ opacity: 0, y: -20 }}
+  animate={{ opacity: 1, y: 0 }}
+  exit={{ opacity: 0, y: -20 }}
+  className="absolute top-16 left-0 w-full bg-background border-b md:hidden shadow-xl z-50"
+>
             <div className="flex flex-col p-4 space-y-2">
               {navLinks.map((link) => (
                 <Link
