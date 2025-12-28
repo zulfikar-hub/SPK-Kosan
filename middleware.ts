@@ -6,15 +6,25 @@ export function middleware(req: NextRequest) {
   const token = req.cookies.get("token")?.value;
   const pathname = req.nextUrl.pathname;
 
-  // 🔓 AUTH PUBLIC
-  if (
-    pathname.startsWith("/api/auth/login") ||
-    pathname.startsWith("/api/auth/register")
-  ) {
+  // ================================
+  // 🔓 API PUBLIC (TANPA LOGIN)
+  // ================================
+  const publicApiRoutes = [
+    "/api/auth/login",
+    "/api/auth/register",
+    "/api/kosan",
+    "/api/kriteria",
+    "/api/topsis",
+    "/api/hasil-topsis",
+  ];
+
+  if (publicApiRoutes.some(route => pathname.startsWith(route))) {
     return NextResponse.next();
   }
 
-  // 🔐 PROTECT ADMIN PAGE
+  // ================================
+  // 🔐 ADMIN PAGE
+  // ================================
   if (pathname.startsWith("/admin")) {
     if (!token) {
       return NextResponse.redirect(
@@ -25,10 +35,11 @@ export function middleware(req: NextRequest) {
     try {
       const decoded = jwt.verify(
         token,
-        process.env.JWT_SECRET as string
+        process.env.JWT_SECRET!
       ) as { role: string };
 
-      if (decoded.role !== "admin") {
+      // ✅ ROLE HARUS KONSISTEN
+      if (decoded.role !== "ADMIN") {
         return NextResponse.redirect(
           new URL("/login?error=forbidden", req.url)
         );
