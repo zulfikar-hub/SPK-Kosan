@@ -6,25 +6,20 @@ export function middleware(req: NextRequest) {
   const token = req.cookies.get("token")?.value || null;
   const pathname = req.nextUrl.pathname;
 
-  // === API ROUTES PROTECTED (kode asli kamu) ===
-  const protectedRoutes = [
-    "/api/auth/logout",
-    "/api/kriteria",
+  // 🔓 API YANG BOLEH DIAKSES TANPA LOGIN
+  const publicApiRoutes = [
     "/api/kosan",
+    "/api/kriteria",
     "/api/hasil-topsis",
     "/api/topsis",
   ];
 
-  const needAuth = protectedRoutes.some((route) => pathname.startsWith(route));
-
-  if (needAuth && !token) {
-    return NextResponse.json(
-      { success: false, message: "Unauthorized" },
-      { status: 401 }
-    );
+  // kalau API publik → lewati middleware
+  if (publicApiRoutes.some((route) => pathname.startsWith(route))) {
+    return NextResponse.next();
   }
 
-  // === PROTECT ADMIN PAGE ===
+  // 🔐 ADMIN PAGE
   if (pathname.startsWith("/admin")) {
     if (!token) {
       return NextResponse.redirect(
