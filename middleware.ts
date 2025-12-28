@@ -3,23 +3,18 @@ import type { NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
 
 export function middleware(req: NextRequest) {
-  const token = req.cookies.get("token")?.value || null;
+  const token = req.cookies.get("token")?.value;
   const pathname = req.nextUrl.pathname;
 
-  // 🔓 API YANG BOLEH DIAKSES TANPA LOGIN
-  const publicApiRoutes = [
-    "/api/kosan",
-    "/api/kriteria",
-    "/api/hasil-topsis",
-    "/api/topsis",
-  ];
-
-  // kalau API publik → lewati middleware
-  if (publicApiRoutes.some((route) => pathname.startsWith(route))) {
+  // 🔓 AUTH PUBLIC
+  if (
+    pathname.startsWith("/api/auth/login") ||
+    pathname.startsWith("/api/auth/register")
+  ) {
     return NextResponse.next();
   }
 
-  // 🔐 ADMIN PAGE
+  // 🔐 PROTECT ADMIN PAGE
   if (pathname.startsWith("/admin")) {
     if (!token) {
       return NextResponse.redirect(
