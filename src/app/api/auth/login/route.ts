@@ -5,13 +5,14 @@ import prisma from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as {
+    const body = await req.json() as {
       identifier: string; // email atau username
       password: string;
     };
 
     const { identifier, password } = body;
 
+    // Validasi input frontend
     if (!identifier || !password) {
       return NextResponse.json(
         { error: "Email/Username dan password wajib diisi" },
@@ -21,9 +22,7 @@ export async function POST(req: Request) {
 
     // Cari user berdasarkan email atau username
     const user = await prisma.user.findFirst({
-      where: {
-        OR: [{ email: identifier }, { name: identifier }],
-      },
+      where: { OR: [{ email: identifier }, { name: identifier }] },
     });
 
     if (!user) {
@@ -33,6 +32,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // Pastikan password ada
     if (!user.password) {
       console.error("LOGIN ERROR: User password kosong!", user);
       return NextResponse.json(
@@ -50,6 +50,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // Pastikan JWT secret ada
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
       console.error("LOGIN ERROR: JWT_SECRET belum di-set di .env");
@@ -66,7 +67,7 @@ export async function POST(req: Request) {
       { expiresIn: "1d" }
     );
 
-    // Simpan token di cookie
+    // Simpan token di cookie HTTP-only
     const res = NextResponse.json({
       success: true,
       message: "Login berhasil",
@@ -81,6 +82,7 @@ export async function POST(req: Request) {
     });
 
     return res;
+
   } catch (err: unknown) {
     if (err instanceof Error) {
       console.error("LOGIN ERROR:", err.message);

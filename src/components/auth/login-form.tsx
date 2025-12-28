@@ -16,40 +16,48 @@ export function LoginForm({ role, onToggleForm, onBackToRole }: LoginFormProps) 
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setIsLoading(true);
 
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error || "Login gagal");
-        setIsLoading(false);
-        return;
-      }
-
-      // Redirect sesuai role
-      if (data.role?.toLowerCase() === "admin") {
-        window.location.href = "/admin";
-        return;
-      }
-
-      window.location.href = "/dashboard";
-    } catch (err) {
-      console.error("LOGIN ERROR:", err);
-      alert("Terjadi kesalahan server");
+  try {
+    // Pastikan identifier dan password tidak kosong
+    if (!identifier || !password) {
+      alert("Email/Username dan password wajib diisi");
+      setIsLoading(false);
+      return;
     }
 
-    setIsLoading(false);
-  };
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifier, password }), // ⚠ gunakan 'identifier'
+    });
 
+    const data = await res.json();
+
+    if (!res.ok) {
+      // Tangani error dari backend
+      alert(data.error || "Login gagal");
+      setIsLoading(false);
+      return;
+    }
+
+    // Token sudah di-set di cookie HTTP-only, langsung redirect
+    if (data.role?.toLowerCase() === "admin") {
+      window.location.href = "/admin";
+      return;
+    }
+
+    window.location.href = "/dashboard";
+
+  } catch (err) {
+    console.error("LOGIN ERROR:", err);
+    alert("Terjadi kesalahan server");
+  } finally {
+    setIsLoading(false);
+  }
+};
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
