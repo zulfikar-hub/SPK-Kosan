@@ -1,6 +1,5 @@
 "use client";
 
-import type React from "react";
 import { useState } from "react";
 import { motion, Variants, easeOut } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
@@ -17,60 +16,56 @@ export function LoginForm({ role, onToggleForm, onBackToRole }: LoginFormProps) 
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsLoading(true);
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-  try {
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier: email, password }),
-    });
+    // Validasi input sebelum kirim ke API
+    if (!email.trim() || !password.trim()) {
+      alert("Email/Username dan password wajib diisi");
+      return;
+    }
 
-    const data = await res.json();
+    setIsLoading(true);
 
-    if (!res.ok) {
-      alert(data.error || "Login gagal");
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: email.trim(), password: password.trim() }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Login gagal");
+        setIsLoading(false);
+        return;
+      }
+
+      // Redirect sesuai role (token sudah di-set di cookie HTTP-only)
+      if (data.role?.toLowerCase() === "admin") {
+        window.location.href = "/admin";
+        return;
+      }
+
+      window.location.href = "/dashboard";
+
+    } catch (err) {
+      console.error("LOGIN ERROR:", err);
+      alert("Terjadi kesalahan server");
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    // Token sudah di-set di cookie HTTP-only
-    // Redirect sesuai role
-    if (data.role?.toLowerCase() === "admin") {
-      window.location.href = "/admin";
-      return;
-    }
-
-    window.location.href = "/dashboard";
-
-  } catch (error) {
-    console.error(error);
-    alert("Terjadi kesalahan server");
-  }
-
-  setIsLoading(false);
-};
+  };
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
-      },
-    },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
   };
 
   const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5, ease: easeOut },
-    },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: easeOut } },
   };
 
   const roleConfig = {
