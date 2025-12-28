@@ -5,11 +5,17 @@ import prisma from "@/lib/prisma";
 import { StatusOperasional, StatusKetersediaan } from "@prisma/client";
 
 /* ============================================
-   📌 Panggil ulang TOPSIS (NON-BLOCKING)
+   🔁 Recalculate TOPSIS (Vercel-safe)
 ============================================ */
 async function recalcTopsis() {
   try {
-    await fetch("/api/topsis/calculate", {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    if (!baseUrl) {
+      console.warn("⚠️ NEXT_PUBLIC_BASE_URL belum diset");
+      return;
+    }
+
+    await fetch(`${baseUrl}/api/topsis/calculate`, {
       method: "POST",
       cache: "no-store",
     });
@@ -28,11 +34,11 @@ export async function GET() {
       include: { hasiltopsis: true },
     });
 
-    return NextResponse.json(kosanList, { status: 200 });
+    return NextResponse.json(kosanList);
   } catch (error) {
     console.error("❌ GET Kosan Error:", error);
     return NextResponse.json(
-      { error: "Gagal mengambil data kosan." },
+      { error: "Gagal mengambil data kosan" },
       { status: 500 }
     );
   }
@@ -56,14 +62,14 @@ export async function POST(req: Request) {
 
     if (
       !nama ||
-      harga === undefined ||
-      jarak === undefined ||
-      fasilitas === undefined ||
-      rating === undefined ||
-      sistem_keamanan === undefined
+      harga == null ||
+      jarak == null ||
+      fasilitas == null ||
+      rating == null ||
+      sistem_keamanan == null
     ) {
       return NextResponse.json(
-        { error: "Semua field wajib diisi." },
+        { error: "Semua field wajib diisi" },
         { status: 400 }
       );
     }
@@ -85,7 +91,7 @@ export async function POST(req: Request) {
       },
     });
 
-    recalcTopsis(); // 🔥 jangan block response
+    recalcTopsis();
 
     return NextResponse.json(
       { message: "Kosan berhasil ditambahkan", data: kosan },
@@ -94,7 +100,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("❌ POST Kosan Error:", error);
     return NextResponse.json(
-      { error: "Gagal menambahkan kosan." },
+      { error: "Gagal menambahkan kosan" },
       { status: 500 }
     );
   }
@@ -106,24 +112,11 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   try {
     const body = await req.json();
-    const {
-      id_kosan,
-      nama,
-      harga,
-      jarak,
-      fasilitas,
-      rating,
-      sistem_keamanan,
-      description,
-      status_operasional,
-      status_ketersediaan,
-      ranking,
-      toggleStatus,
-    } = body;
+    const { id_kosan, toggleStatus, ...rest } = body;
 
     if (!id_kosan) {
       return NextResponse.json(
-        { error: "ID kosan wajib dikirim." },
+        { error: "ID kosan wajib dikirim" },
         { status: 400 }
       );
     }
@@ -134,62 +127,45 @@ export async function PUT(req: Request) {
 
     if (!existing) {
       return NextResponse.json(
-        { error: "Kosan tidak ditemukan." },
+        { error: "Kosan tidak ditemukan" },
         { status: 404 }
       );
-    }
-
-    let newStatusOperasional = existing.status_operasional;
-    if (toggleStatus) {
-      newStatusOperasional =
-        existing.status_operasional === StatusOperasional.AKTIF
-          ? StatusOperasional.INAKTIF
-          : StatusOperasional.AKTIF;
-    } else if (status_operasional) {
-      newStatusOperasional = status_operasional;
-    }
-
-    let newStatusKetersediaan = existing.status_ketersediaan;
-    if (status_ketersediaan) {
-      newStatusKetersediaan = status_ketersediaan;
     }
 
     const updated = await prisma.kosan.update({
       where: { id_kosan: Number(id_kosan) },
       data: {
-        nama: nama ?? existing.nama,
-        harga: harga !== undefined ? Number(harga) : existing.harga,
-        jarak: jarak !== undefined ? Number(jarak) : existing.jarak,
-        fasilitas: fasilitas !== undefined ? Number(fasilitas) : existing.fasilitas,
-        rating: rating !== undefined ? Number(rating) : existing.rating,
+        ...rest,
+        harga: rest.harga != null ? Number(rest.harga) : undefined,
+        jarak: rest.jarak != null ? Number(rest.jarak) : undefined,
+        fasilitas: rest.fasilitas != null ? Number(rest.fasilitas) : undefined,
+        rating: rest.rating != null ? Number(rest.rating) : undefined,
         sistem_keamanan:
-          sistem_keamanan !== undefined
-            ? Number(sistem_keamanan)
-            : existing.sistem_keamanan,
-        description: description ?? existing.description,
-        ranking: ranking ?? existing.ranking,
-        status_operasional: newStatusOperasional,
-        status_ketersediaan: newStatusKetersediaan,
+          rest.sistem_keamanan != null
+            ? Number(rest.sistem_keamanan)
+            : undefined,
+        status_operasional: toggleStatus
+          ? existing.status_operasional === StatusOperasional.AKTIF
+            ? StatusOperasional.INAKTIF
+            : StatusOperasional.AKTIF
+          : rest.status_operasional,
       },
     });
 
     recalcTopsis();
 
-    return NextResponse.json(
-      { message: "Data kosan diperbarui", data: updated },
-      { status: 200 }
-    );
+    return NextResponse.json({ message: "Data kosan diperbarui", data: updated });
   } catch (error) {
     console.error("❌ PUT Kosan Error:", error);
     return NextResponse.json(
-      { error: "Gagal mengupdate data kosan." },
+      { error: "Gagal update kosan" },
       { status: 500 }
     );
   }
 }
 
 /* ============================================
-   📌 DELETE — Hapus kosan
+   🗑️ DELETE — Hapus kosan (FIX RELASI)
 ============================================ */
 export async function DELETE(req: Request) {
   try {
@@ -203,31 +179,24 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const existing = await prisma.kosan.findUnique({
-      where: { id_kosan: Number(id) },
+    const id_kosan = Number(id);
+
+    // 🔥 WAJIB hapus relasi dulu
+    await prisma.hasilTopsis.deleteMany({
+      where: { id_kosan },
     });
 
-    if (!existing) {
-      return NextResponse.json(
-        { error: "Kosan tidak ditemukan." },
-        { status: 404 }
-      );
-    }
-
     await prisma.kosan.delete({
-      where: { id_kosan: Number(id) },
+      where: { id_kosan },
     });
 
     recalcTopsis();
 
-    return NextResponse.json(
-      { message: "Kosan berhasil dihapus" },
-      { status: 200 }
-    );
+    return NextResponse.json({ message: "Kosan berhasil dihapus" });
   } catch (error) {
     console.error("❌ DELETE Kosan Error:", error);
     return NextResponse.json(
-      { error: "Gagal menghapus kosan." },
+      { error: "Gagal menghapus kosan" },
       { status: 500 }
     );
   }
