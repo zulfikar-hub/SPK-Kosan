@@ -6,6 +6,7 @@ export async function POST(req: Request) {
   try {
     const { name, email, password, role } = await req.json();
 
+    // Validasi input
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: "Semua field harus diisi" },
@@ -13,6 +14,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // Cek email
     const existing = await prisma.user.findUnique({
       where: { email },
     });
@@ -24,11 +26,14 @@ export async function POST(req: Request) {
       );
     }
 
+    // Hash password
     const hashed = await bcrypt.hash(password, 10);
 
+    // Role aman
     const finalRole =
       role?.toUpperCase() === "ADMIN" ? "ADMIN" : "USER";
 
+    // Create user
     const user = await prisma.user.create({
       data: {
         name,
@@ -38,6 +43,7 @@ export async function POST(req: Request) {
       },
     });
 
+    // Response aman (tanpa password)
     return NextResponse.json(
       {
         success: true,
@@ -52,18 +58,18 @@ export async function POST(req: Request) {
       { status: 200 }
     );
   } catch (err: unknown) {
-  if (err instanceof Error) {
-    console.error("REGISTER ERROR:", err.message);
+    if (err instanceof Error) {
+      console.error("REGISTER ERROR:", err.message);
+      return NextResponse.json(
+        { error: "Register gagal", detail: err.message },
+        { status: 500 }
+      );
+    }
+
+    console.error("REGISTER ERROR:", err);
     return NextResponse.json(
-      { error: "Register gagal", detail: err.message },
+      { error: "Register gagal", detail: "Unknown error" },
       { status: 500 }
     );
   }
-
-  console.error("REGISTER ERROR:", err);
-  return NextResponse.json(
-    { error: "Register gagal", detail: "Unknown error" },
-    { status: 500 }
-  );
-}
 }
