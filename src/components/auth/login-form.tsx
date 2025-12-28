@@ -16,7 +16,6 @@ export function LoginForm({ role, onToggleForm, onBackToRole }: LoginFormProps) 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
 
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
