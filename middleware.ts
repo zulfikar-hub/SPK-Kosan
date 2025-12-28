@@ -7,15 +7,11 @@ export function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
   // ================================
-  // 🔓 PUBLIC ROUTES (TANPA LOGIN)
+  // 🔓 PUBLIC ROUTES
   // ================================
-  const publicRoutes = [
-    "/login",
-    "/register",
-    "/",
-  ];
+  const publicRoutes = ["/", "/login", "/register"];
 
-  if (publicRoutes.includes(pathname)) {
+  if (publicRoutes.some(route => pathname.startsWith(route))) {
     return NextResponse.next();
   }
 
@@ -30,7 +26,7 @@ export function middleware(req: NextRequest) {
   }
 
   // ================================
-  // 🔐 ADMIN & DASHBOARD (WAJIB LOGIN)
+  // 🔐 ADMIN & DASHBOARD
   // ================================
   if (pathname.startsWith("/admin") || pathname.startsWith("/dashboard")) {
     if (!token) {
@@ -39,8 +35,16 @@ export function middleware(req: NextRequest) {
       );
     }
 
+    const JWT_SECRET = process.env.JWT_SECRET;
+    if (!JWT_SECRET) {
+      console.error("JWT_SECRET belum diset");
+      return NextResponse.redirect(
+        new URL("/login?error=server-config", req.url)
+      );
+    }
+
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      const decoded = jwt.verify(token, JWT_SECRET) as {
         role: string;
       };
 
@@ -50,12 +54,12 @@ export function middleware(req: NextRequest) {
           new URL("/login?error=forbidden", req.url)
         );
       }
-    } catch (err) {
-  console.error("JWT ERROR:", err);
-  return NextResponse.redirect(
-    new URL("/login?error=invalid-token", req.url)
-  );
-}
+
+    } catch {
+      return NextResponse.redirect(
+        new URL("/login?error=invalid-token", req.url)
+      );
+    }
   }
 
   return NextResponse.next();
