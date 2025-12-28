@@ -6,30 +6,38 @@ import prisma from "@/lib/prisma";
 export async function POST(req: Request) {
   try {
     const body = await req.json() as {
-      email: string;
+      identifier: string; // bisa email atau username
       password: string;
     };
 
-    const { email, password } = body;
+    const { identifier, password } = body;
 
-    if (!email || !password) {
+    // Validasi input
+    if (!identifier || !password) {
       return NextResponse.json(
-        { error: "Email dan password wajib diisi" },
+        { error: "Email/Username dan password wajib diisi" },
         { status: 400 }
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
+    // Cari user berdasarkan email atau username
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: identifier },
+          { name: identifier } // username disini pakai field 'name'
+        ],
+      },
     });
 
     if (!user) {
       return NextResponse.json(
-        { error: "Email tidak ditemukan" },
+        { error: "User tidak ditemukan" },
         { status: 401 }
       );
     }
 
+    // Cek password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return NextResponse.json(
@@ -38,7 +46,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Generate token
+    // Generate JWT token
     const token = jwt.sign(
       {
         id: user.id,
@@ -49,7 +57,7 @@ export async function POST(req: Request) {
       { expiresIn: "1d" }
     );
 
-    // ---- SIMPAN TOKEN DI COOKIES UNTUK MIDDLEWARE ----
+    // Simpan token di cookie
     const res = NextResponse.json({
       success: true,
       message: "Login berhasil",
@@ -64,9 +72,18 @@ export async function POST(req: Request) {
     });
 
     return res;
-  } catch {
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      console.error("LOGIN ERROR:", err.message);
+      return NextResponse.json(
+        { error: "Terjadi kesalahan server", detail: err.message },
+        { status: 500 }
+      );
+    }
+
+    console.error("LOGIN ERROR:", err);
     return NextResponse.json(
-      { error: "Terjadi kesalahan server" },
+      { error: "Terjadi kesalahan server", detail: "Unknown error" },
       { status: 500 }
     );
   }
