@@ -1,9 +1,12 @@
 "use client"
 
+
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { BarChart3, Users, Sliders, Home, LogOut, Building2, MessageCircle } from "lucide-react"
 import { motion } from "framer-motion"
+import { useRouter } from "next/navigation";
+
 
 const menuItems = [
   {
@@ -41,6 +44,19 @@ const menuItems = [
 export function Sidebar() {
   const pathname = usePathname()
 
+  const router = useRouter();
+
+const handleLogout = async () => {
+  try {
+    await fetch("/api/auth/logout", {
+      method: "POST",
+    });
+
+    router.push("/login");
+  } catch (error) {
+    console.error("Logout gagal", error);
+  }
+};
   return (
     <motion.aside
       initial={{ x: -250 }}
@@ -87,10 +103,15 @@ export function Sidebar() {
 
       {/* Logout Button */}
       <div className="p-4 border-t border-sidebar-border">
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200">
-          <LogOut size={20} />
-          <span className="text-sm font-medium">Logout</span>
-        </button>
+        <button
+  onClick={handleLogout}
+  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg
+  text-sidebar-foreground hover:bg-sidebar-accent
+  hover:text-sidebar-accent-foreground transition-all duration-200"
+>
+  <LogOut size={20} />
+  <span className="text-sm font-medium">Logout</span>
+</button>
       </div>
     </motion.aside>
   )
