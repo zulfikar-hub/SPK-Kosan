@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 
 export async function POST() {
-  const response = NextResponse.json(
-    { message: "Logout berhasil" },
-    { status: 200 }
-  );
+  const response = NextResponse.json({
+    message: "Logout berhasil",
+  });
 
-  // Hapus cookie auth (SESUIKAN NAMA COOKIE KAMU)
+  // Hapus cookie token (samakan dengan nama cookie login kamu)
   response.cookies.set("token", "", {
     httpOnly: true,
     expires: new Date(0),

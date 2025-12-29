@@ -7,7 +7,6 @@ import { BarChart3, Users, Sliders, Home, LogOut, Building2, MessageCircle } fro
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation";
 
-
 const menuItems = [
   {
     label: "Dashboard",
@@ -43,20 +42,21 @@ const menuItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
-
   const router = useRouter();
 
-const handleLogout = async () => {
-  try {
-    await fetch("/api/auth/logout", {
-      method: "POST",
-    });
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+      });
 
-    router.push("/auth");
-  } catch (error) {
-    console.error("Logout gagal", error);
-  }
-};
+      router.push("/auth"); // karena folder kamu auth/page.tsx
+      router.refresh();     // bersihin state
+    } catch (error) {
+      console.error("Logout gagal", error);
+    }
+  };
+
   return (
     <motion.aside
       initial={{ x: -250 }}
