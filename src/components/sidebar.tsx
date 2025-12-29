@@ -52,7 +52,7 @@ const handleLogout = async () => {
       method: "POST",
     });
 
-    router.push("/login");
+    router.push("/auth");
   } catch (error) {
     console.error("Logout gagal", error);
   }
