@@ -102,13 +102,9 @@ const [hasCalculated, setHasCalculated] = useState(false);
   fetchKriteria();
 }, []);
 
-  const getBobot = (key: string): number => {
+  const getBobot = (key: string) => {
   const value = bobotSementara[key];
-
-  // fallback aman
-  if (typeof value !== "number") return 0;
-
-  return value / 100; // persen → desimal
+  return value !== undefined ? value / 100 : 0;
 };
 
   const calculateTOPSIS = () => {
@@ -190,11 +186,10 @@ const [hasCalculated, setHasCalculated] = useState(false);
     nama: kosan.nama,
     skor: kosan.skor || 0,
   }));
-  const totalBobot =
-  kriteriaList.length > 0
-    ? kriteriaList.reduce((sum, k) => sum + (k.bobot ?? 0), 0)
-    : Object.values(bobotSementara).reduce((sum, v) => sum + (v ?? 0), 0);
-
+  const totalBobot = kriteriaList.reduce(
+  (sum, k) => sum + (Number(k.bobot) || 0),
+  0
+);
     const totalPersen = totalBobot * 100;
   // Ganti warna tiap segmen
   // const COLORS = ["#8b5cf6", "#06b6d4", "#f59e0b", "#10b981", "#ef4444"];
@@ -207,21 +202,15 @@ const [hasCalculated, setHasCalculated] = useState(false);
     sistem_keamanan: <Shield className="h-6 w-6 text-red-500" />,
   };
   // Fungsi ubah slider
-  const handleSliderChange = (index: number, newValue: number) => {
-  const updated = [...kriteriaList];
-  updated[index].bobot = newValue / 100;
-  setKriteriaList(updated);
-
-  const key = (updated[index].nama ?? updated[index].nama_kriteria ?? "")
-    .toLowerCase()
-    .replace(/\s+/g, "_");
-
-  setBobotSementara(prev => ({
-    ...prev,
-    [key]: newValue / 100,
-  }));
+  const handleSliderChange = (index: number, value: number) => {
+  setKriteriaList(prev =>
+    prev.map((k, i) =>
+      i === index
+        ? { ...k, bobot: value } // ✅ ubah ke desimal
+        : k
+    )
+  );
 };
-
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -404,17 +393,16 @@ const [hasCalculated, setHasCalculated] = useState(false);
 
                         {/* Slider */}
                         <Slider
-                          value={[k.bobot * 100]} // tampil 20%
-                          onValueChange={(v) => handleSliderChange(index, v[0])}
-                          max={100}
-                          step={5}
-                          className="w-full mt-2"
-                        />
+  value={[k.bobot * 100]}
+  onValueChange={(v) => handleSliderChange(index, v[0] / 100)}
+  max={100}
+  step={5}
+/>
 
                         {/* Persentase */}
                         <div className="mt-1 text-sm font-medium">
-                          {(k.bobot * 100).toFixed(0)}%
-                        </div>
+  {(k.bobot * 100).toFixed(0)}%
+</div>
                       </div>
                     );
                   })}
@@ -423,10 +411,13 @@ const [hasCalculated, setHasCalculated] = useState(false);
                 <div className="text-right font-medium">
   Total Bobot:{" "}
   <span
-    className={Math.round(totalPersen) === 100 ? "text-green-600" : "text-red-500"}
-  >
-    {Math.round(totalPersen)}%
-  </span>
+  className={
+    Math.round(totalPersen) === 100
+      ? "text-green-600"
+      : "text-red-500"
+  }>
+  {Math.round(totalPersen)}%
+</span>
 </div>
                 {/* Pie Chart */}
                 {/* Pie Chart */}
@@ -444,7 +435,7 @@ const [hasCalculated, setHasCalculated] = useState(false);
                                 const bobot = k.bobot ?? 0;
                                 return {
                                   key: namaKriteria,
-                                  value: bobot,
+                                  value: Number(bobot),
                                   displayValue: (bobot * 100).toFixed(0),
                                 };
                               })
