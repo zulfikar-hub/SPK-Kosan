@@ -1,22 +1,26 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
+type KosanNumeric = {
+  id_kosan: number;
+  harga: number;
+  jarak: number;
+  fasilitas: number;
+  rating: number;
+  sistem_keamanan: number;
+};
+
 export async function POST() {
   try {
-    const kosanList = await prisma.kosan.findMany({
-      where: {
-        status_operasional: "AKTIF",
-      },
+    const data = await prisma.kosan.findMany({
+      where: { status_operasional: "AKTIF" },
     });
 
-    if (kosanList.length === 0) {
-      return NextResponse.json(
-        { error: "Data kosan kosong" },
-        { status: 400 }
-      );
+    if (!data.length) {
+      return NextResponse.json({ error: "Data kosong" }, { status: 400 });
     }
 
-    const kosan = kosanList.map(k => ({
+    const kosan: KosanNumeric[] = data.map(k => ({
       id_kosan: k.id_kosan,
       harga: Number(k.harga),
       jarak: Number(k.jarak),
@@ -26,31 +30,25 @@ export async function POST() {
     }));
 
     // ================= NORMALISASI =================
-    const sumSquares = kosan.reduce(
-      (acc, k) => ({
-        harga: acc.harga + k.harga ** 2,
-        jarak: acc.jarak + k.jarak ** 2,
-        fasilitas: acc.fasilitas + k.fasilitas ** 2,
-        rating: acc.rating + k.rating ** 2,
-        sistem_keamanan: acc.sistem_keamanan + k.sistem_keamanan ** 2,
-      }),
-      { harga: 0, jarak: 0, fasilitas: 0, rating: 0, sistem_keamanan: 0 }
-    );
-
-    const safeDiv = (val: number, sum: number) =>
-      sum === 0 ? 0 : val / Math.sqrt(sum);
+    const denom = {
+      harga: Math.sqrt(kosan.reduce((a, k) => a + k.harga ** 2, 0)),
+      jarak: Math.sqrt(kosan.reduce((a, k) => a + k.jarak ** 2, 0)),
+      fasilitas: Math.sqrt(kosan.reduce((a, k) => a + k.fasilitas ** 2, 0)),
+      rating: Math.sqrt(kosan.reduce((a, k) => a + k.rating ** 2, 0)),
+      sistem_keamanan: Math.sqrt(kosan.reduce((a, k) => a + k.sistem_keamanan ** 2, 0)),
+    };
 
     const normalized = kosan.map(k => ({
       id_kosan: k.id_kosan,
-      harga: safeDiv(k.harga, sumSquares.harga),
-      jarak: safeDiv(k.jarak, sumSquares.jarak),
-      fasilitas: safeDiv(k.fasilitas, sumSquares.fasilitas),
-      rating: safeDiv(k.rating, sumSquares.rating),
-      sistem_keamanan: safeDiv(k.sistem_keamanan, sumSquares.sistem_keamanan),
+      harga: k.harga / denom.harga,
+      jarak: k.jarak / denom.jarak,
+      fasilitas: k.fasilitas / denom.fasilitas,
+      rating: k.rating / denom.rating,
+      sistem_keamanan: k.sistem_keamanan / denom.sistem_keamanan,
     }));
 
-    // ================= BOBOT =================
-    const weights = {
+    // ================= BOBOT (DEFAULT) =================
+    const w = {
       harga: 0.25,
       jarak: 0.25,
       fasilitas: 0.2,
@@ -60,11 +58,11 @@ export async function POST() {
 
     const weighted = normalized.map(k => ({
       id_kosan: k.id_kosan,
-      harga: k.harga * weights.harga,
-      jarak: k.jarak * weights.jarak,
-      fasilitas: k.fasilitas * weights.fasilitas,
-      rating: k.rating * weights.rating,
-      sistem_keamanan: k.sistem_keamanan * weights.sistem_keamanan,
+      harga: k.harga * w.harga,
+      jarak: k.jarak * w.jarak,
+      fasilitas: k.fasilitas * w.fasilitas,
+      rating: k.rating * w.rating,
+      sistem_keamanan: k.sistem_keamanan * w.sistem_keamanan,
     }));
 
     // ================= SOLUSI IDEAL =================
@@ -85,7 +83,7 @@ export async function POST() {
     };
 
     // ================= PREFERENSI =================
-    const ranked = weighted
+    const hasil = weighted
       .map(k => {
         const dPlus = Math.sqrt(
           (k.harga - idealPlus.harga) ** 2 +
@@ -111,23 +109,15 @@ export async function POST() {
       .sort((a, b) => b.nilai_preferensi - a.nilai_preferensi)
       .map((r, i) => ({ ...r, ranking: i + 1 }));
 
-    // ================= SIMPAN (AMAN) =================
+    // ================= SIMPAN =================
     await prisma.$transaction([
       prisma.hasilTopsis.deleteMany(),
-      prisma.hasilTopsis.createMany({
-        data: ranked,
-      }),
+      prisma.hasilTopsis.createMany({ data: hasil }),
     ]);
 
-    return NextResponse.json(
-      { message: "TOPSIS berhasil dihitung" },
-      { status: 200 }
-    );
+    return NextResponse.json({ message: "TOPSIS berhasil" });
   } catch (err) {
-    console.error("TOPSIS ERROR:", err);
-    return NextResponse.json(
-      { error: "Gagal menghitung TOPSIS" },
-      { status: 500 }
-    );
+    console.error(err);
+    return NextResponse.json({ error: "Gagal menghitung TOPSIS" }, { status: 500 });
   }
 }

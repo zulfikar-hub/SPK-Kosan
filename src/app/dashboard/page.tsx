@@ -49,24 +49,15 @@ interface KosanData {
   jarak: number;
   fasilitas: number;
   rating: number;
+  sistem_keamanan: number;
   skor?: number;
-  sistem_keamanan: number;
-  skor_keamanan?: number;
-}
-
-interface Bobot {
-  harga: number;
-  jarak: number;
-  fasilitas: number;
-  rating: number;
-  sistem_keamanan: number;
 }
 
 interface Kriteria {
   id: number;
   nama?: string;
   nama_kriteria?: string;
-  bobot: number;
+  bobot: number; // DISIMPAN DALAM DESIMAL (0.25)
 }
 
 export default function DashboardPage() {
@@ -83,179 +74,117 @@ export default function DashboardPage() {
     };
     fetchKosan();
   }, []);
-  const [kriteriaList, setKriteriaList] = useState<Kriteria[]>([]);
-  const [bobotSementara, setBobotSementara] = useState<Record<string, number>>(
-    {}
-  );
-  const [kosanList, setKosanList] = useState<KosanData[]>([]);
-  const [hasCalculated, setHasCalculated] = useState(false);
+const [kosanList, setKosanList] = useState<KosanData[]>([]);
+const [kriteriaList, setKriteriaList] = useState<Kriteria[]>([]);
+const [bobotSementara, setBobotSementara] = useState<Record<string, number>>({});
+const [hasCalculated, setHasCalculated] = useState(false);
+
   useEffect(() => {
-    const fetchKriteria = async () => {
-      try {
-        const res = await fetch("/api/kriteria");
-        const data = await res.json();
-        console.log("🔥 Data dari /api/kriteria:", data); // 👈 CEK di console
-        setKriteriaList(data);
+  const fetchKriteria = async () => {
+    const res = await fetch("/api/kriteria");
+    const data = await res.json();
 
-        const initialBobot = Array.isArray(data)
-          ? data.reduce(
-              (acc, item) => {
-                if (item?.nama && item?.bobot) {
-                  acc[item.nama.toLowerCase().replace(/\s+/g, "_")] =
-                    item.bobot;
-                }
-                return acc;
-              },
-              {} as Record<string, number>
-            )
-          : {};
-        setBobotSementara(initialBobot);
-      } catch (err) {
-        console.error("Gagal ambil data kriteria:", err);
-      }
-    };
-    fetchKriteria();
-  }, []);
-const bobot: Bobot = {
-    harga: bobotSementara.harga ?? 25,
-    jarak: bobotSementara.jarak ?? 20,
-    fasilitas: bobotSementara.fasilitas ?? 20,
-    rating: bobotSementara.rating ?? 15,
-    sistem_keamanan: bobotSementara.sistem_keamanan ?? 20,
-  };
+    setKriteriaList(data);
 
-  // === FUNGSI TOPSIS ===
-  const calculateTOPSIS = () => {
-    if (kosanList.length === 0) return;
+    // ambil bobot DB sebagai default
+    const initialBobot = data.reduce((acc: Record<string, number>, k: Kriteria) => {
+      const key = (k.nama ?? k.nama_kriteria ?? "")
+        .toLowerCase()
+        .replace(/\s+/g, "_");
 
-    // === 1) Bangun bobotMap dengan pengecekan tipe yang aman ===
-    const bobotMap = (Array.isArray(kriteriaList) ? kriteriaList : []).reduce<
-      Record<string, number>
-    >((acc, item) => {
-      if (
-        typeof item === "object" &&
-        item !== null &&
-        "nama" in item &&
-        "bobot" in item
-      ) {
-        const nama = String((item as { nama: unknown }).nama);
-        const bobot = Number((item as { bobot: unknown }).bobot);
-        const key = nama.toLowerCase().replace(/\s+/g, "_");
-        acc[key] = bobot;
-      }
+      acc[key] = k.bobot; // sudah desimal (0.25)
       return acc;
     }, {});
 
-    // jika bobotMap kosong, fallback ke state lokal bobot (agar UI slider tetap berpengaruh)
-    // pastikan keys juga seragam: gunakan key lowercase dengan underscore
-    const getWeight = (key: keyof Bobot) => bobotMap[key] ?? bobot[key] ?? 0; // angka dalam persen, mis: 20
-
-    // --- NORMALISASI ---
-    const normalizedMatrix = kosanList.map((kosan) => {
-      const hargaNorm =
-        kosan.harga /
-        Math.sqrt(kosanList.reduce((sum, k) => sum + k.harga ** 2, 0) || 1);
-
-      const jarakNorm =
-        kosan.jarak /
-        Math.sqrt(kosanList.reduce((sum, k) => sum + k.jarak ** 2, 0) || 1);
-
-      const fasilitasNorm =
-        kosan.fasilitas /
-        Math.sqrt(kosanList.reduce((sum, k) => sum + k.fasilitas ** 2, 0) || 1);
-
-      const ratingNorm =
-        kosan.rating /
-        Math.sqrt(kosanList.reduce((sum, k) => sum + k.rating ** 2, 0) || 1);
-
-      const sistem_KeamananNorm =
-        kosan.sistem_keamanan /
-        Math.sqrt(
-          kosanList.reduce((sum, k) => sum + k.sistem_keamanan ** 2, 0) || 1
-        );
-
-      return {
-        ...kosan,
-        hargaNorm,
-        jarakNorm,
-        fasilitasNorm,
-        ratingNorm,
-        sistem_KeamananNorm,
-      };
-    });
-    // --- PEMBOBOTAN (pakai getWeight dan bagi 100 karena bobot disimpan persen) ---
-    const weightedMatrix = normalizedMatrix.map((kosan) => ({
-      ...kosan,
-      hargaWeighted: kosan.hargaNorm * (getWeight("harga") / 100),
-      jarakWeighted: kosan.jarakNorm * (getWeight("jarak") / 100),
-      fasilitasWeighted: kosan.fasilitasNorm * (getWeight("fasilitas") / 100),
-      ratingWeighted: kosan.ratingNorm * (getWeight("rating") / 100),
-      sistem_KeamananWeighted:
-        kosan.sistem_KeamananNorm * (getWeight("sistem_keamanan") / 100),
-    }));
-
-    // --- SOLUSI IDEAL & NEGATIF ---
-    const idealSolution = {
-      harga: Math.min(...weightedMatrix.map((k) => k.hargaWeighted)),
-      jarak: Math.min(...weightedMatrix.map((k) => k.jarakWeighted)),
-      fasilitas: Math.max(...weightedMatrix.map((k) => k.fasilitasWeighted)),
-      rating: Math.max(...weightedMatrix.map((k) => k.ratingWeighted)),
-      sistem_keamanan: Math.max(
-        ...weightedMatrix.map((k) => k.sistem_KeamananWeighted)
-      ),
-    };
-
-    const negativeIdealSolution = {
-      harga: Math.max(...weightedMatrix.map((k) => k.hargaWeighted)),
-      jarak: Math.max(...weightedMatrix.map((k) => k.jarakWeighted)),
-      fasilitas: Math.min(...weightedMatrix.map((k) => k.fasilitasWeighted)),
-      rating: Math.min(...weightedMatrix.map((k) => k.ratingWeighted)),
-      sistem_keamanan: Math.min(
-        ...weightedMatrix.map((k) => k.sistem_KeamananWeighted)
-      ),
-    };
-
-    // --- HITUNG SKOR AKHIR ---
-    const updatedKosanList = weightedMatrix.map((kosan) => {
-      const distanceToIdeal = Math.sqrt(
-        (kosan.hargaWeighted - idealSolution.harga) ** 2 +
-          (kosan.jarakWeighted - idealSolution.jarak) ** 2 +
-          (kosan.fasilitasWeighted - idealSolution.fasilitas) ** 2 +
-          (kosan.ratingWeighted - idealSolution.rating) ** 2 +
-          (kosan.sistem_KeamananWeighted - idealSolution.sistem_keamanan) ** 2
-      );
-
-      const distanceToNegativeIdeal = Math.sqrt(
-        (kosan.hargaWeighted - negativeIdealSolution.harga) ** 2 +
-          (kosan.jarakWeighted - negativeIdealSolution.jarak) ** 2 +
-          (kosan.fasilitasWeighted - negativeIdealSolution.fasilitas) ** 2 +
-          (kosan.ratingWeighted - negativeIdealSolution.rating) ** 2 +
-          (kosan.sistem_KeamananWeighted -
-            negativeIdealSolution.sistem_keamanan) **
-            2
-      );
-
-      const skor =
-        distanceToNegativeIdeal /
-        (distanceToIdeal + distanceToNegativeIdeal || 1);
-
-      return {
-        id_kosan: kosan.id_kosan,
-        nama: kosan.nama,
-        harga: kosan.harga,
-        jarak: kosan.jarak,
-        fasilitas: kosan.fasilitas,
-        rating: kosan.rating,
-        sistem_keamanan: kosan.sistem_keamanan,
-        skor: Number(skor.toFixed(3)),
-        skor_keamanan: kosan.skor_keamanan,
-      };
-    });
-
-    updatedKosanList.sort((a, b) => (b.skor || 0) - (a.skor || 0));
-    setKosanList(updatedKosanList);
-    setHasCalculated(true);
+    setBobotSementara(initialBobot);
   };
+
+  fetchKriteria();
+}, []);
+
+  const getBobot = (key: string): number => {
+  const value = bobotSementara[key];
+
+  // fallback aman
+  if (typeof value !== "number") return 0;
+
+  return value / 100; // persen → desimal
+};
+
+  const calculateTOPSIS = () => {
+  if (!kosanList.length) return;
+
+  // 1. SUM SQUARE
+  const sum = kosanList.reduce(
+    (a, k) => ({
+      harga: a.harga + k.harga ** 2,
+      jarak: a.jarak + k.jarak ** 2,
+      fasilitas: a.fasilitas + k.fasilitas ** 2,
+      rating: a.rating + k.rating ** 2,
+      sistem_keamanan: a.sistem_keamanan + k.sistem_keamanan ** 2,
+    }),
+    { harga: 0, jarak: 0, fasilitas: 0, rating: 0, sistem_keamanan: 0 }
+  );
+
+  // 2. NORMALISASI + BOBOT
+  const weighted = kosanList.map(k => ({
+    ...k,
+    harga: (k.harga / Math.sqrt(sum.harga)) * getBobot("harga"),
+    jarak: (k.jarak / Math.sqrt(sum.jarak)) * getBobot("jarak"),
+    fasilitas:
+      (k.fasilitas / Math.sqrt(sum.fasilitas)) * getBobot("fasilitas"),
+    rating:
+      (k.rating / Math.sqrt(sum.rating)) * getBobot("rating"),
+    sistem_keamanan:
+      (k.sistem_keamanan / Math.sqrt(sum.sistem_keamanan)) *
+      getBobot("sistem_keamanan"),
+  }));
+
+  // 3. SOLUSI IDEAL
+  const idealPlus = {
+    harga: Math.min(...weighted.map(k => k.harga)),
+    jarak: Math.min(...weighted.map(k => k.jarak)),
+    fasilitas: Math.max(...weighted.map(k => k.fasilitas)),
+    rating: Math.max(...weighted.map(k => k.rating)),
+    sistem_keamanan: Math.max(...weighted.map(k => k.sistem_keamanan)),
+  };
+
+  const idealMinus = {
+    harga: Math.max(...weighted.map(k => k.harga)),
+    jarak: Math.max(...weighted.map(k => k.jarak)),
+    fasilitas: Math.min(...weighted.map(k => k.fasilitas)),
+    rating: Math.min(...weighted.map(k => k.rating)),
+    sistem_keamanan: Math.min(...weighted.map(k => k.sistem_keamanan)),
+  };
+
+  // 4. NILAI PREFERENSI
+  const result = weighted.map(k => {
+    const dPlus = Math.sqrt(
+      (k.harga - idealPlus.harga) ** 2 +
+      (k.jarak - idealPlus.jarak) ** 2 +
+      (k.fasilitas - idealPlus.fasilitas) ** 2 +
+      (k.rating - idealPlus.rating) ** 2 +
+      (k.sistem_keamanan - idealPlus.sistem_keamanan) ** 2
+    );
+
+    const dMinus = Math.sqrt(
+      (k.harga - idealMinus.harga) ** 2 +
+      (k.jarak - idealMinus.jarak) ** 2 +
+      (k.fasilitas - idealMinus.fasilitas) ** 2 +
+      (k.rating - idealMinus.rating) ** 2 +
+      (k.sistem_keamanan - idealMinus.sistem_keamanan) ** 2
+    );
+
+    return {
+      ...k,
+      skor: +(dMinus / (dPlus + dMinus)).toFixed(3),
+    };
+  });
+
+  setKosanList(result.sort((a, b) => (b.skor ?? 0) - (a.skor ?? 0)));
+  setHasCalculated(true);
+};
+
   // === Data Chart ===
   const chartData = kosanList.map((kosan) => ({
     nama: kosan.nama,
@@ -279,10 +208,19 @@ const bobot: Bobot = {
   };
   // Fungsi ubah slider
   const handleSliderChange = (index: number, newValue: number) => {
-    const updated = [...kriteriaList];
-    updated[index].bobot = newValue / 100; // Simpan dalam bentuk 0.2 tapi tampil 20%
-    setKriteriaList(updated);
-  };
+  const updated = [...kriteriaList];
+  updated[index].bobot = newValue / 100;
+  setKriteriaList(updated);
+
+  const key = (updated[index].nama ?? updated[index].nama_kriteria ?? "")
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+
+  setBobotSementara(prev => ({
+    ...prev,
+    [key]: newValue / 100,
+  }));
+};
 
   return (
     <div className="min-h-screen bg-background">
