@@ -237,7 +237,6 @@ const hasilTopsis = runTopsisLogic(kosanList as KosanData[], weightsArray);
             <TabsTrigger value="bobot">Bobot Kriteria</TabsTrigger>
             <TabsTrigger value="hasil">Hasil Analisis</TabsTrigger>
             <TabsTrigger value="keamanan">Keamanan</TabsTrigger>
-            <TabsTrigger value="laporan">Laporan</TabsTrigger>
           </TabsList>
 
           {/* TAB DATA KOSAN */}
