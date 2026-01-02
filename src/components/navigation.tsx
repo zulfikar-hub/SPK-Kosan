@@ -20,24 +20,36 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 export function Navigation() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
-  /** * LOGIKA AUTH UTAMA
-   * Default: false (User dianggap belum login saat pertama masuk)
-   */
   const [isLoggedIn, setIsLoggedIn] = useState(false); 
+
+  // Fungsi untuk mengecek status login
+  const checkLoginStatus = () => {
+    const userSession = localStorage.getItem("isLoggedIn");
+    setIsLoggedIn(userSession === "true");
+  }; 
 
   // Simulasi cek login (misal dari LocalStorage atau Session)
   useEffect(() => {
-    const userSession = localStorage.getItem("isLoggedIn");
-    if (userSession === "true") {
-      setIsLoggedIn(true);
-    }
+    // 1. Cek saat pertama kali komponen muncul
+    checkLoginStatus();
+
+    // 2. LISTEN: Pantau jika ada perubahan di localStorage dari tab/halaman lain
+    window.addEventListener("storage", checkLoginStatus);
+    
+    // 3. LISTEN: Pantau event kustom jika login dilakukan di halaman yang sama (opsional)
+    window.addEventListener("local-storage", checkLoginStatus);
+
+    return () => {
+      window.removeEventListener("storage", checkLoginStatus);
+      window.removeEventListener("local-storage", checkLoginStatus);
+    };
   }, []);
 
-  const handleLogout = () => {
+ const handleLogout = () => {
     localStorage.removeItem("isLoggedIn");
     setIsLoggedIn(false);
-    window.location.href = "/"; // Redirect ke beranda setelah logout
+    // Gunakan router.push atau window.location
+    window.location.href = "/"; 
   };
 
   const navLinks = [
