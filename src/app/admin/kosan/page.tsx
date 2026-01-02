@@ -54,6 +54,21 @@ interface Kosan {
     updatedAt?: string
 }
 
+interface CriteriaRange {
+  harga: { min: number; max: number };
+  jarak: { min: number; max: number };
+  fasilitas: { min: number; max: number };
+  rating: { min: number; max: number };
+  sistem_keamanan: { min: number; max: number };
+}
+
+interface CriterionConfig {
+  label: string;
+  key: keyof CriteriaRange; // Sekarang merujuk ke interface, bukan variabel
+  rawKey: keyof Kosan;
+  isCost: boolean;
+}
+
 // ----------------------------------------------------
 // KOMPONEN UTAMA
 // ----------------------------------------------------
@@ -68,7 +83,14 @@ export default function KosanPage() {
     const [deleteModalOpen, setDeleteModalOpen] = useState(false)
     const [selectedDeleteId, setSelectedDeleteId] = useState<number | null>(null)
     const [searchText, setSearchText] = useState('');
-    
+    const criteriaList: CriterionConfig[] = [
+  { label: "Harga (Cost)", key: "harga", rawKey: "harga", isCost: true },
+  { label: "Jarak (Cost)", key: "jarak", rawKey: "jarak", isCost: true },
+  { label: "Fasilitas (Benefit)", key: "fasilitas", rawKey: "fasilitas", isCost: false },
+  { label: "Rating (Benefit)", key: "rating", rawKey: "rating", isCost: false },
+  { label: "Keamanan (Benefit)", key: "sistem_keamanan", rawKey: "sistem_keamanan", isCost: false },
+];
+
     // --- Load Data Awal
     useEffect(() => {
         const loadData = async () => {
@@ -643,90 +665,37 @@ const topsisValue = Number(
                                 </div>
 
                                 {/* Bagian kriteria: (logic normalisasi tetap sama) */}
-                                <div className="bg-muted/50 rounded-lg p-4 mb-6">
-                                    <h3 className="font-semibold text-foreground mb-4">Score per Kriteria (tampilan)</h3>
-                                    <div className="space-y-3">
-                                        {/* Harga (Cost) */}
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm text-foreground/70">Harga (Cost)</span>
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-32 bg-border rounded-full h-2">
-                                                    <div
-                                                        className="bg-primary h-full rounded-full transition-all"
-                                                        style={{ width: `${((selectedNormalized?.harga ?? 0) * 100).toFixed(2)}%` }}
-                                                    />
-                                                </div>
-                                                <span className="font-semibold text-foreground w-12 text-right">
-                                                    {((selectedNormalized?.harga ?? normalize(selectedKosan.harga, criteriaRange.harga.min, criteriaRange.harga.max, true)) ).toFixed(2)}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Jarak (Cost) */}
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm text-foreground/70">Jarak (Cost)</span>
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-32 bg-border rounded-full h-2">
-                                                    <div
-                                                        className="bg-primary h-full rounded-full transition-all"
-                                                        style={{ width: `${((selectedNormalized?.jarak ?? 0) * 100).toFixed(2)}%` }}
-                                                    />
-                                                </div>
-                                                <span className="font-semibold text-foreground w-12 text-right">
-                                                    {((selectedNormalized?.jarak ?? normalize(selectedKosan.jarak, criteriaRange.jarak.min, criteriaRange.jarak.max, true))).toFixed(2)}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Fasilitas (Benefit) */}
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm text-foreground/70">Fasilitas (Benefit)</span>
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-32 bg-border rounded-full h-2">
-                                                    <div
-                                                        className="bg-primary h-full rounded-full transition-all"
-                                                        style={{ width: `${((selectedNormalized?.fasilitas ?? 0) * 100).toFixed(2)}%` }}
-                                                    />
-                                                </div>
-                                                <span className="font-semibold text-foreground w-12 text-right">
-                                                    {((selectedNormalized?.fasilitas ?? normalize(selectedKosan.fasilitas, criteriaRange.fasilitas.min, criteriaRange.fasilitas.max, false))).toFixed(2)}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Rating (Benefit) */}
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm text-foreground/70">Rating (Benefit)</span>
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-32 bg-border rounded-full h-2">
-                                                    <div
-                                                        className="bg-primary h-full rounded-full transition-all"
-                                                        style={{ width: `${((selectedNormalized?.rating ?? 0) * 100).toFixed(2)}%` }}
-                                                    />
-                                                </div>
-                                                <span className="font-semibold text-foreground w-12 text-right">
-                                                    {((selectedNormalized?.rating ?? normalize(selectedKosan.rating, criteriaRange.rating.min, criteriaRange.rating.max, false))).toFixed(2)}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Keamanan (Benefit) */}
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm text-foreground/70">Keamanan (Benefit)</span>
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-32 bg-border rounded-full h-2">
-                                                    <div
-                                                        className="bg-primary h-full rounded-full transition-all"
-                                                        style={{ width: `${((selectedNormalized?.keamanan ?? 0) * 100).toFixed(2)}%` }}
-                                                    />
-                                                </div>
-                                                <span className="font-semibold text-foreground w-12 text-right">
-                                                    {((selectedNormalized?.keamanan ?? normalize(selectedKosan.sistem_keamanan, criteriaRange.keamanan.min, criteriaRange.keamanan.max, false))).toFixed(2)}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                               <div className="bg-muted/50 rounded-lg p-4 mb-6">
+  <h3 className="font-semibold text-foreground mb-4">Score per Kriteria (tampilan)</h3>
+  <div className="space-y-3">
+    {criteriaList.map((crit) => {
+      // TypeScript sekarang tahu crit.key pasti ada di selectedNormalized
+      const normalizedValue: number = selectedNormalized?.[crit.key as keyof typeof selectedNormalized] ?? 
+  normalize(
+    selectedKosan[crit.rawKey as keyof Kosan] as number, 
+    // Tambahkan 'as keyof typeof criteriaRange' di sini:
+    criteriaRange[crit.key as keyof typeof criteriaRange].min, 
+    criteriaRange[crit.key as keyof typeof criteriaRange].max, 
+    crit.isCost
+  );
+      return (
+<div key={crit.key.toString()} className="flex items-center justify-between">          <span className="text-sm text-foreground/70">{crit.label}</span>
+          <div className="flex items-center gap-2">
+            <div className="w-32 bg-border rounded-full h-2">
+              <div
+                className="bg-primary h-full rounded-full transition-all"
+                style={{ width: `${(normalizedValue * 100).toFixed(2)}%` }}
+              />
+            </div>
+            <span className="font-semibold text-foreground w-12 text-right text-sm">
+              {normalizedValue.toFixed(2)}
+            </span>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</div>
 
                                 {selectedKosan.description && (
                                     <div>

@@ -2,7 +2,6 @@
 
 export type KosanData = {
   id_kosan: number;
-  // Menggunakan unknown agar bisa menerima Decimal Prisma tanpa error
   harga: unknown;
   jarak: unknown;
   fasilitas: unknown;
@@ -10,19 +9,67 @@ export type KosanData = {
   sistem_keamanan: unknown;
 };
 
+// --- 1. FUNGSI HELPER PENILAIAN (SCORING 1-5) ---
+
+const getPoinHarga = (val: number) => {
+  if (val <= 500000) return 5;
+  if (val <= 1000000) return 4;
+  if (val <= 1500000) return 3;
+  if (val <= 2000000) return 2;
+  return 1;
+};
+
+const getPoinJarak = (val: number) => {
+  if (val <= 0.5) return 5;
+  if (val <= 1.5) return 4;
+  if (val <= 3) return 3;
+  if (val <= 5) return 2;
+  return 1;
+};
+
+const getPoinFasilitas = (val: number) => {
+  if (val >= 8) return 5;
+  if (val >= 6) return 4;
+  if (val >= 4) return 3;
+  if (val >= 2) return 2;
+  return 1;
+};
+
+const getPoinRating = (val: number) => {
+  if (val >= 4.5) return 5;
+  if (val >= 3.5) return 4;
+  if (val >= 2.5) return 3;
+  if (val >= 1.5) return 2;
+  return 1;
+};
+
+const getPoinKeamanan = (val: number) => {
+  if (val >= 8) return 5;
+  if (val >= 6) return 4;
+  if (val >= 4) return 3;
+  if (val >= 2) return 2;
+  return 1;
+};
+
+// --- 2. FUNGSI UTAMA ENGINE TOPSIS ---
+
 export function runTopsisLogic(data: KosanData[], weights: number[]) {
   if (data.length === 0) return [];
 
-  // 1. Matriks Keputusan - Konversi semua input ke Number murni
+  // 1. Matriks Keputusan - Konversi input mentah ke SKOR POIN (1-5)
   const matrix = data.map((d) => [
-    Number(d.harga),
-    Number(d.jarak),
-    Number(d.fasilitas),
-    Number(d.rating),
-    Number(d.sistem_keamanan),
+    getPoinHarga(Number(d.harga)),
+    getPoinJarak(Number(d.jarak)),
+    getPoinFasilitas(Number(d.fasilitas)),
+    getPoinRating(Number(d.rating)),
+    getPoinKeamanan(Number(d.sistem_keamanan)),
   ]);
 
-  const isBenefit = [false, false, true, true, true]; // Harga & Jarak = Cost
+  /**
+   * Catatan: isBenefit sekarang semuanya TRUE.
+   * Karena pada fungsi helper di atas, kriteria Cost (Harga & Jarak) 
+   * sudah dibalik logikanya (Semakin baik = Poin semakin tinggi).
+   */
   const cols = matrix[0].length;
 
   // 2. Normalisasi
@@ -41,16 +88,12 @@ export function runTopsisLogic(data: KosanData[], weights: number[]) {
   const idealNeg = Array(cols).fill(0);
   for (let j = 0; j < cols; j++) {
     const colValues = weighted.map((r) => r[j]);
-    if (isBenefit[j]) {
-      idealPos[j] = Math.max(...colValues);
-      idealNeg[j] = Math.min(...colValues);
-    } else {
-      idealPos[j] = Math.min(...colValues);
-      idealNeg[j] = Math.max(...colValues);
-    }
+    // Karena sudah dikonversi ke poin 1-5, semua kolom bersifat Benefit
+    idealPos[j] = Math.max(...colValues);
+    idealNeg[j] = Math.min(...colValues);
   }
 
-  // 5. Hitung Skor (Jarak Solusi Ideal)
+  // 5. Hitung Skor (Kedekatan Relatif terhadap Solusi Ideal)
   const results = weighted.map((row, i) => {
     const dPlus = Math.sqrt(row.reduce((a, v, j) => a + Math.pow(v - idealPos[j], 2), 0));
     const dMin = Math.sqrt(row.reduce((a, v, j) => a + Math.pow(v - idealNeg[j], 2), 0));
@@ -66,4 +109,4 @@ export function runTopsisLogic(data: KosanData[], weights: number[]) {
   return results
     .sort((a, b) => b.nilai_preferensi - a.nilai_preferensi)
     .map((r, index) => ({ ...r, ranking: index + 1 }));
-}
+} 

@@ -37,7 +37,6 @@ import {
   Wifi,
   Shield,
   Camera,
-  Download,
 } from "lucide-react";
 
 // --- IMPORT ENGINE PUSAT ---
@@ -416,22 +415,7 @@ const hasilTopsis = runTopsisLogic(kosanList as KosanData[], weightsArray);
             </Card>
           </TabsContent>
 
-          {/* TAB LAPORAN */}
-          <TabsContent value="laporan" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Ekspor Laporan</CardTitle>
-              </CardHeader>
-              <CardContent className="flex gap-4">
-                <Button variant="outline" disabled={!hasCalculated}>
-                  <Download className="h-4 w-4 mr-2" /> Unduh PDF
-                </Button>
-                <Button variant="outline" disabled={!hasCalculated}>
-                  <Download className="h-4 w-4 mr-2" /> Unduh CSV
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
+        
         </Tabs>
       </div>
     </div>

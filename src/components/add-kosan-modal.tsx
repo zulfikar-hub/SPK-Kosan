@@ -1,20 +1,12 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useEffect, useState } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import  Label  from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-
-interface AddKosanModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSubmit: (data: KosanFormData) => void
-  editingData?: KosanFormData & { id?: number }
-}
 
 export interface KosanFormData {
   nama: string
@@ -26,135 +18,104 @@ export interface KosanFormData {
   description?: string
 }
 
+interface AddKosanModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSubmit: (data: KosanFormData) => void
+  editingData?: KosanFormData & { id?: number }
+}
 
 export function AddKosanModal({ open, onOpenChange, onSubmit, editingData }: AddKosanModalProps) {
-  const [formData, setFormData] = useState<KosanFormData>(
-    editingData || {
-      nama: "",
-      harga: 0,
-      jarak: 0,
-      fasilitas: 0,
-      rating: 0,
-      sistem_keamanan: 0,
-      description: "",
-    }
-  )
-
- const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSubmit(formData)
-    setFormData({ nama: "", harga: 0, jarak: 0, fasilitas: 0, rating: 0, sistem_keamanan: 0, description: "" })
-    onOpenChange(false)
+  const initialData: KosanFormData = {
+    nama: "", harga: 0, jarak: 0, fasilitas: 3, rating: 4, sistem_keamanan: 3, description: ""
   }
+
+  const [formData, setFormData] = useState<KosanFormData>(initialData)
+
+  useEffect(() => {
+    if (open) {
+      setFormData(editingData ? { ...editingData, description: editingData.description ?? "" } : initialData)
+    }
+  }, [editingData, open])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-<DialogContent
-  className="
-    sm:max-w-[800px]
-    max-h-[85vh]
-    overflow-y-auto
-    p-6
-    rounded-2xl
-    shadow-xl
-  "
->        <DialogHeader>
-          <DialogTitle>{editingData ? "Edit Kosan" : "Tambah Kosan Baru"}</DialogTitle>
-          <DialogDescription>
-            {editingData ? "Update informasi kosan" : "Masukkan detail kosan baru ke sistem"}
-          </DialogDescription>
+      <DialogContent className="sm:max-w-[600px] p-6">
+        <DialogHeader>
+          <DialogTitle className="text-xl">{editingData ? "Edit Data Kosan" : "Tambah Kosan Baru"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="nama">Nama Kosan</Label>
-            <Input
-              id="nama"
-              placeholder="Contoh: Kosan A"
-              value={formData.nama}
-              onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
-              required
-            />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="harga">Harga (Rp)</Label>
-            <Input
-              id="harga"
-              type="number"
-              value={formData.harga}
-              onChange={(e) => setFormData({ ...formData, harga: Number(e.target.value) })}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="jarak">Jarak (km)</Label>
-            <Input
-              id="jarak"
-              type="number"
-              value={formData.jarak}
-              onChange={(e) => setFormData({ ...formData, jarak: Number(e.target.value) })}
-              required
-            />
-          </div>
-
-            <div className="space-y-2">
-            <Label htmlFor="fasilitas">Fasilitas (nilai)</Label>
-            <Input
-              id="fasilitas"
-              type="number"
-              value={formData.fasilitas}
-              onChange={(e) => setFormData({ ...formData, fasilitas: Number(e.target.value) })}
-              required
-            />
+        <form onSubmit={(e) => { e.preventDefault(); onSubmit(formData); onOpenChange(false); }} className="space-y-5">
+          
+          {/* Input Teks & Angka Biasa */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <Label>Nama Kosan</Label>
+              <Input value={formData.nama} onChange={(e) => setFormData({...formData, nama: e.target.value})} required />
+            </div>
+            <div className="space-y-1">
+              <Label>Harga (Rp/Bulan)</Label>
+              <Input type="number" value={formData.harga || ""} onChange={(e) => setFormData({...formData, harga: Number(e.target.value)})} required />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="rating">Rating (0-5)</Label>
-              <Input
-                id="rating"
-                type="number"
-                placeholder="Contoh: 4.8"
-                value={formData.rating}
-                onChange={(e) => setFormData({ ...formData, rating: Number.parseFloat(e.target.value) })}
-                min="0"
-                max="5"
-                step="0.1"
-                required
-              />
+            <div className="space-y-1">
+              <Label>Jarak ke Kampus (km)</Label>
+              <Input type="number" step="0.1" value={formData.jarak || ""} onChange={(e) => setFormData({...formData, jarak: Number(e.target.value)})} required />
             </div>
-
-            <div className="space-y-2">
-            <Label htmlFor="sistem_keamanan">Sistem Keamanan</Label>
-            <Input
-              id="sistem_keamanan"
-              type="number"
-              value={formData.sistem_keamanan}
-              onChange={(e) =>
-                setFormData({ ...formData, sistem_keamanan: Number(e.target.value) })
-              }
-              required
-            />
-          </div>
+            <div className="space-y-1">
+              <Label>Rating User (1-5)</Label>
+              <Input type="number" step="0.1" min="1" max="5" value={formData.rating || ""} onChange={(e) => setFormData({...formData, rating: Number(e.target.value)})} required />
+            </div>
           </div>
 
+          {/* Pilihan Skor Fasilitas (Klik Langsung) */}
           <div className="space-y-2">
-            <Label htmlFor="description">Deskripsi (Opsional)</Label>
-            <Textarea
-              id="description"
-              placeholder="Deskripsikan fasilitas atau informasi penting lainnya..."
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-            />
+            <Label>Kualitas Fasilitas (1-5)</Label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((num) => (
+                <Button
+                  key={num}
+                  type="button"
+                  variant={formData.fasilitas === num ? "default" : "outline"}
+                  className="flex-1"
+                  onClick={() => setFormData({ ...formData, fasilitas: num })}
+                >
+                  {num}
+                </Button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground italic">1: Sangat Minim, 5: Mewah</p>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Batal
-            </Button>
-            <Button type="submit">{editingData ? "Update Kosan" : "Tambah Kosan"}</Button>
+          {/* Pilihan Keamanan (Klik Langsung) */}
+          <div className="space-y-2">
+            <Label>Tingkat Keamanan (1-5)</Label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((num) => (
+                <Button
+                  key={num}
+                  type="button"
+                  variant={formData.sistem_keamanan === num ? "default" : "outline"}
+                  className="flex-1"
+                  onClick={() => setFormData({ ...formData, sistem_keamanan: num })}
+                >
+                  {num}
+                </Button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground italic">1: Gembok, 3: CCTV+Jaga, 5: Security 24 Jam</p>
+          </div>
+
+          <div className="space-y-1">
+            <Label>Deskripsi Tambahan</Label>
+            <Textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Batal</Button>
+            <Button type="submit">{editingData ? "Update Data" : "Simpan Kosan"}</Button>
           </div>
         </form>
       </DialogContent>
