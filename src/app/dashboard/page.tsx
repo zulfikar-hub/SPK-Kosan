@@ -3,7 +3,7 @@
 import { useState, useEffect, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Slider from "@/components/ui/slider";
+import  Slider  from "@/components/ui/slider";
 import { Navigation } from "@/components/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -37,10 +37,14 @@ import {
   Wifi,
   Shield,
   Camera,
+  Download,
 } from "lucide-react";
 
+// --- IMPORT ENGINE PUSAT ---
+import { runTopsisLogic } from "@/lib/topsis/engine";
+
 interface KosanData {
-  id_kosan: string;
+  id_kosan: number;
   nama: string;
   harga: number;
   jarak: number;
@@ -54,7 +58,7 @@ interface Kriteria {
   id: number;
   nama?: string;
   nama_kriteria?: string;
-  bobot: number; // Disimpan DB (0.25)
+  bobot: number;
 }
 
 export default function DashboardPage() {
@@ -89,7 +93,7 @@ export default function DashboardPage() {
         const initialBobot: Record<string, number> = {};
         data.forEach((k: Kriteria) => {
           const key = (k.nama ?? k.nama_kriteria ?? "").toLowerCase().replace(/\s+/g, "_");
-          // Konversi desimal DB (0.25) ke Slider (25)
+          // Konversi dari desimal (0.2) ke bulat (20) jika perlu
           const nilaiBulat = k.bobot <= 1 ? Math.round(k.bobot * 100) : k.bobot;
           initialBobot[key] = nilaiBulat;
         });
@@ -101,12 +105,7 @@ export default function DashboardPage() {
     fetchKriteria();
   }, []);
 
-  // Helper untuk mendapatkan bobot desimal (0.25) untuk rumus
-  const getBobotDesimal = (key: string) => {
-    const value = bobotSementara[key];
-    return value ? value / 100 : 0;
-  };
-
+  // --- FUNGSI UNTUK MENANGANI PERUBAHAN SLIDER ---
   const handleSliderChange = (key: string, value: number) => {
     setBobotSementara((prev) => ({
       ...prev,
@@ -114,74 +113,35 @@ export default function DashboardPage() {
     }));
   };
 
+  // --- FUNGSI HITUNG MENGGUNAKAN ENGINE PUSAT ---
   const calculateTOPSIS = () => {
     if (!kosanList.length) return;
 
-    // 1. SUM SQUARE (Penyebut Normalisasi)
-    const sum = kosanList.reduce(
-      (a, k) => ({
-        harga: a.harga + Number(k.harga || 0) ** 2,
-        jarak: a.jarak + Number(k.jarak || 0) ** 2,
-        fasilitas: a.fasilitas + Number(k.fasilitas || 0) ** 2,
-        rating: a.rating + Number(k.rating || 0) ** 2,
-        sistem_keamanan: a.sistem_keamanan + Number(k.sistem_keamanan || 0) ** 2,
-      }),
-      { harga: 0, jarak: 0, fasilitas: 0, rating: 0, sistem_keamanan: 0 }
-    );
+    // Urutan weightsArray harus sesuai dengan urutan kolom di Engine
+    const weightsArray = [
+      (bobotSementara["harga"] || 0) / 100,
+      (bobotSementara["jarak"] || 0) / 100,
+      (bobotSementara["fasilitas"] || 0) / 100,
+      (bobotSementara["rating"] || 0) / 100,
+      (bobotSementara["sistem_keamanan"] || 0) / 100,
+    ];
 
-    // 2. NORMALISASI TERBOBOT
-    const weighted = kosanList.map((k) => ({
-      ...k,
-      w_harga: (k.harga / (Math.sqrt(sum.harga) || 1)) * getBobotDesimal("harga"),
-      w_jarak: (k.jarak / (Math.sqrt(sum.jarak) || 1)) * getBobotDesimal("jarak"),
-      w_fasilitas: (k.fasilitas / (Math.sqrt(sum.fasilitas) || 1)) * getBobotDesimal("fasilitas"),
-      w_rating: (k.rating / (Math.sqrt(sum.rating) || 1)) * getBobotDesimal("rating"),
-      w_sistem_keamanan: (k.sistem_keamanan / (Math.sqrt(sum.sistem_keamanan) || 1)) * getBobotDesimal("sistem_keamanan"),
-    }));
-
-    // 3. SOLUSI IDEAL (Cost: Harga, Jarak | Benefit: Fasilitas, Rating, Keamanan)
-    const idealPlus = {
-      harga: Math.min(...weighted.map((k) => k.w_harga)),
-      jarak: Math.min(...weighted.map((k) => k.w_jarak)),
-      fasilitas: Math.max(...weighted.map((k) => k.w_fasilitas)),
-      rating: Math.max(...weighted.map((k) => k.w_rating)),
-      sistem_keamanan: Math.max(...weighted.map((k) => k.w_sistem_keamanan)),
-    };
-
-    const idealMinus = {
-      harga: Math.max(...weighted.map((k) => k.w_harga)),
-      jarak: Math.max(...weighted.map((k) => k.w_jarak)),
-      fasilitas: Math.min(...weighted.map((k) => k.w_fasilitas)),
-      rating: Math.min(...weighted.map((k) => k.w_rating)),
-      sistem_keamanan: Math.min(...weighted.map((k) => k.w_sistem_keamanan)),
-    };
-
-    // 4. NILAI PREFERENSI
-    const result = weighted.map((k) => {
-      const dPlus = Math.sqrt(
-        (k.w_harga - idealPlus.harga) ** 2 +
-        (k.w_jarak - idealPlus.jarak) ** 2 +
-        (k.w_fasilitas - idealPlus.fasilitas) ** 2 +
-        (k.w_rating - idealPlus.rating) ** 2 +
-        (k.w_sistem_keamanan - idealPlus.sistem_keamanan) ** 2
+    // Panggil Engine Pusat dengan casting agar aman dari Decimal Prisma
+const hasilTopsis = runTopsisLogic(kosanList as KosanData[], weightsArray);
+    // Update list kosan dengan hasil skor
+    const updatedList = kosanList.map((k) => {
+      const match = hasilTopsis.find(
+        (h) => h.id_kosan.toString() === k.id_kosan.toString()
       );
 
-      const dMinus = Math.sqrt(
-        (k.w_harga - idealMinus.harga) ** 2 +
-        (k.w_jarak - idealMinus.jarak) ** 2 +
-        (k.w_fasilitas - idealMinus.fasilitas) ** 2 +
-        (k.w_rating - idealMinus.rating) ** 2 +
-        (k.w_sistem_keamanan - idealMinus.sistem_keamanan) ** 2
-      );
-
-      const skorAkhir = dMinus / (dPlus + dMinus);
       return {
         ...k,
-        skor: isNaN(skorAkhir) ? 0 : Number(skorAkhir.toFixed(3)),
+        skor: match ? Number(match.nilai_preferensi.toFixed(3)) : 0,
       };
     });
 
-    setKosanList(result.sort((a, b) => (b.skor ?? 0) - (a.skor ?? 0)));
+    // Urutkan berdasarkan skor tertinggi (Ranking 1 di atas)
+    setKosanList(updatedList.sort((a, b) => (b.skor ?? 0) - (a.skor ?? 0)));
     setHasCalculated(true);
   };
 
@@ -236,32 +196,36 @@ export default function DashboardPage() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Status Analisis</CardTitle>
-              <Calculator className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Rata-rata Harga</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <Badge variant={hasCalculated ? "default" : "secondary"}>
-                {hasCalculated ? "Selesai" : "Belum"}
-              </Badge>
+              <div className="text-2xl font-bold">
+                {kosanList.length > 0
+                  ? new Intl.NumberFormat("id-ID", {
+                      style: "currency",
+                      currency: "IDR",
+                      maximumFractionDigits: 0,
+                    }).format(
+                      kosanList.reduce((sum, k) => sum + Number(k.harga), 0) / kosanList.length
+                    )
+                  : "Rp 0"}
+              </div>
+              <p className="text-xs text-muted-foreground">Per bulan</p>
             </CardContent>
           </Card>
 
-        <Card>
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Status Analisis</CardTitle>
-              <div className="h-4 w-4 rounded-full bg-primary/20 flex items-center justify-center">
-                <div className={`h-2 w-2 rounded-full ${hasCalculated ? "bg-green-500" : "bg-yellow-500"}`} />
-              </div>
+              <Badge variant={hasCalculated ? "default" : "secondary"}>
+                {hasCalculated ? "Selesai" : "Belum Dihitung"}
+              </Badge>
             </CardHeader>
             <CardContent>
-              <div className="pt-1">
-                <Badge variant={hasCalculated ? "default" : "secondary"}>
-                  {hasCalculated ? "Selesai" : "Belum Dihitung"}
-                </Badge>
-              </div>
               <p className="text-xs text-muted-foreground mt-2 italic">
-                {hasCalculated ? "Data sudah akurat" : "Klik tombol hitung"}
+                {hasCalculated ? "Data sudah akurat" : "Atur bobot lalu klik hitung"}
               </p>
             </CardContent>
           </Card>
@@ -276,7 +240,7 @@ export default function DashboardPage() {
             <TabsTrigger value="laporan">Laporan</TabsTrigger>
           </TabsList>
 
-          {/* --- TAB DATA --- */}
+          {/* TAB DATA KOSAN */}
           <TabsContent value="data">
             <Card>
               <CardHeader><CardTitle>Daftar Kosan</CardTitle></CardHeader>
@@ -309,7 +273,7 @@ export default function DashboardPage() {
             </Card>
           </TabsContent>
 
-          {/* --- TAB BOBOT --- */}
+          {/* TAB BOBOT KRITERIA */}
           <TabsContent value="bobot" className="space-y-6">
             <Card>
               <CardHeader>
@@ -324,12 +288,12 @@ export default function DashboardPage() {
                     return (
                       <div key={k.id} className="bg-white p-4 rounded-xl border flex flex-col items-center">
                         <div className="flex flex-col items-center mb-4">
-                          {icons[key]}
+                          {icons[key] || <Calculator className="h-6 w-6" />}
                           <span className="font-medium mt-2 capitalize">{key.replace("_", " ")}</span>
                         </div>
                         <Slider
                           value={[currentVal]}
-                          onValueChange={(v) => handleSliderChange(key, v[0])}
+                          onValueChange={(v: number[]) => handleSliderChange(key, v[0])}
                           max={100}
                           step={5}
                           className="w-full"
@@ -348,7 +312,7 @@ export default function DashboardPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={Object.entries(bobotSementara).map(([name, val]) => ({ name, value: val }))}
+                        data={Object.entries(bobotSementara).map(([name, value]) => ({ name, value }))}
                         cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value"
                         label={({ name, value }) => `${name}: ${value}%`}
                       >
@@ -364,7 +328,7 @@ export default function DashboardPage() {
             </Card>
           </TabsContent>
 
-          {/* --- TAB HASIL --- */}
+          {/* TAB HASIL ANALISIS */}
           <TabsContent value="hasil">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
@@ -417,7 +381,7 @@ export default function DashboardPage() {
             </Card>
           </TabsContent>
 
-          {/* --- TAB KEAMANAN --- */}
+          {/* TAB KEAMANAN */}
           <TabsContent value="keamanan" className="space-y-6">
             <Card>
               <CardHeader>
@@ -425,17 +389,14 @@ export default function DashboardPage() {
                   <Camera className="h-5 w-5 text-primary" />
                   Analisis Sistem Keamanan
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Nilai keamanan tiap kosan berdasarkan hasil survei sistem keamanan (Skala 1-10).
-                </p>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nama Kosan</TableHead>
-                      <TableHead>Fasilitas CCTV / Penjaga</TableHead>
-                      <TableHead>Nilai Keamanan</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Nilai</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -452,6 +413,23 @@ export default function DashboardPage() {
                     ))}
                   </TableBody>
                 </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* TAB LAPORAN */}
+          <TabsContent value="laporan" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Ekspor Laporan</CardTitle>
+              </CardHeader>
+              <CardContent className="flex gap-4">
+                <Button variant="outline" disabled={!hasCalculated}>
+                  <Download className="h-4 w-4 mr-2" /> Unduh PDF
+                </Button>
+                <Button variant="outline" disabled={!hasCalculated}>
+                  <Download className="h-4 w-4 mr-2" /> Unduh CSV
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
