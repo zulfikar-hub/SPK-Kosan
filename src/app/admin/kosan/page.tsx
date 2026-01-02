@@ -368,6 +368,7 @@ export default function KosanPage() {
         
     }, [kosanList, searchText]);
 
+    // Pastikan fungsinya seperti ini
     return (
         <div className="flex">
             <Sidebar />
@@ -551,9 +552,17 @@ const topsisValue = Number(
                                 <TableCell className="text-center">
                                     <div className="flex items-center justify-center gap-2">
                                         {/* Detail */}
-                                        <button onClick={(e) => { e.stopPropagation(); setSelectedKosan(kosan); }} title="Lihat detail" className="p-2 hover:bg-primary/10 rounded-lg transition-colors">
-                                            <Eye size={18} className="text-primary" />
-                                        </button>
+                                        <Button
+  variant="ghost"
+  size="icon"
+  onClick={(e) => {
+    e.stopPropagation();
+    setEditingKosan(kosan); // Isi data kosan ke state edit
+    setAddModalOpen(true);  // Buka modal tambah/edit yang tadi kita perbaiki
+  }}
+>
+  <Eye className="h-4 w-4" />
+</Button>
 
                                         {/* Edit */}
                                         <button onClick={(e) => { e.stopPropagation(); setEditingKosan(kosan); setAddModalOpen(true); }} title="Edit kosan" className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900 rounded-lg transition-colors text-blue-600 dark:text-blue-400">
