@@ -238,7 +238,7 @@ export default function AnalyticsPage() {
                   icon={<PieChartIcon className="w-5 h-5" />}
                   colorClass="border-l-4 border-yellow-500/80"/>
                 <StatCard
-                  title="Pengguna Aktif"
+                  title="Total Pengguna"
                   value={summaryData.activeUsers}
                   icon={<Loader2 className="w-5 h-5" />}
                   colorClass="border-l-4 border-accent/80"/>
