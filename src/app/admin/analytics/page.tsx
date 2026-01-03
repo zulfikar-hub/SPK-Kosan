@@ -31,7 +31,12 @@ import React from "react"
 const COLORS = [
     "hsl(var(--color-primary))", 
     "hsl(var(--color-accent))", 
-    "hsl(var(--color-destructive))"
+    "hsl(var(--color-destructive))",
+    "#60A5FA",
+    "#34D399",
+    "#FBBF24",
+    "#F87171",
+    "#A78BFA",
 ]
 
 // ----------------------------------------------------
@@ -288,9 +293,12 @@ export default function AnalyticsPage() {
     dataKey="value" // <-- Mengambil nilai dari field 'value'
     // ...
 >
-    {statusData.map((entry, index) => (
-        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-    ))}
+   {statusData.map((entry, index) => (
+  <Cell
+    key={`cell-${index}`}
+    fill={COLORS[index % COLORS.length]}
+  />
+))}
 </Pie>
                                             <Tooltip content={({ active, payload }: CustomTooltipProps) => {
                                                 if (active && payload && payload.length) {
