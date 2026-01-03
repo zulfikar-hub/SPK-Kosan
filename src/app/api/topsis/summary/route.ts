@@ -1,4 +1,6 @@
 // app/api/topsis/summary/route.ts atau pages/api/topsis/summary.ts
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma'; // Import Prisma Client yang sudah dikonfigurasi

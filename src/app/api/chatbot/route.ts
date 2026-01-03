@@ -1,3 +1,6 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { streamText } from "ai"
 import { google } from "@ai-sdk/google"
 import { NextResponse } from "next/server"
