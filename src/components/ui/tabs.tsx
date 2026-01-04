@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, FC } from "react";
 
-// Context untuk menyimpan state tab aktif
+// 1. Context untuk menyimpan state tab aktif
 interface TabsContextType {
   activeTab: string;
   setActiveTab: (value: string) => void;
@@ -8,35 +8,59 @@ interface TabsContextType {
 
 const TabsContext = createContext<TabsContextType | undefined>(undefined);
 
+// 2. Interface Tabs - Sekarang mendukung Controlled (value) dan Uncontrolled (defaultValue)
 interface TabsProps {
   defaultValue?: string;
+  value?: string;           // Mendukung state dari luar
+  onValueChange?: (value: string) => void; // Fungsi untuk mengubah state dari luar
   children: ReactNode;
-  className?: string; // ← tambahkan className
+  className?: string;
 }
 
-export const Tabs: FC<TabsProps> = ({ defaultValue, children, className }) => {
-  const [activeTab, setActiveTab] = useState(defaultValue || "");
+export const Tabs: FC<TabsProps> = ({ defaultValue, value, onValueChange, children, className }) => {
+  // State internal untuk menangani jika user tidak pakai props 'value'
+  const [internalTab, setInternalTab] = useState(defaultValue || "");
+
+  // Tentukan tab mana yang aktif: 
+  // Jika ada props 'value', pakai itu. Jika tidak, pakai state internal.
+  const activeTab = value !== undefined ? value : internalTab;
+
+  const handleTabChange = (newValue: string) => {
+    // Jalankan fungsi dari props jika ada
+    if (onValueChange) {
+      onValueChange(newValue);
+    }
+    // Update state internal
+    setInternalTab(newValue);
+  };
 
   return (
-    <TabsContext.Provider value={{ activeTab, setActiveTab }}>
-      <div className={className}>{children}</div> {/* ← pakai className */}
+    <TabsContext.Provider value={{ activeTab, setActiveTab: handleTabChange }}>
+      <div className={className}>{children}</div>
     </TabsContext.Provider>
   );
 };
 
+// 3. TabsList - Tetap sama seperti punya kamu
 interface TabsListProps {
   children: ReactNode;
   className?: string;
 }
 export const TabsList: FC<TabsListProps> = ({ children, className }) => {
-  return <div className={className}>{children}</div>;
+  return (
+    <div className={`inline-flex h-12 items-center justify-center rounded-xl bg-slate-100 p-1.5 text-slate-500 shadow-sm ${className || ""}`}>
+      {children}
+    </div>
+  );
 };
 
+// 4. TabsTrigger - Tetap menggunakan logika klik kamu
 interface TabsTriggerProps {
   value: string;
   children: ReactNode;
   className?: string;
 }
+// --- Update bagian TabsTrigger ---
 export const TabsTrigger: FC<TabsTriggerProps> = ({ value, children, className }) => {
   const context = useContext(TabsContext);
   if (!context) throw new Error("TabsTrigger must be used inside Tabs");
@@ -45,11 +69,12 @@ export const TabsTrigger: FC<TabsTriggerProps> = ({ value, children, className }
 
   return (
     <button
+      type="button"
       onClick={() => setActiveTab(value)}
-      className={`px-4 py-2 -mb-px font-medium border-b-2 ${
+      className={`inline-flex items-center justify-center whitespace-nowrap rounded-lg px-6 py-2 text-sm font-semibold transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 ${
         activeTab === value
-          ? "border-blue-500 text-blue-600"
-          : "border-transparent text-gray-500 hover:text-gray-700"
+          ? "bg-white text-blue-600 shadow-sm" // Efek tombol yang "keluar" saat aktif
+          : "hover:bg-slate-200/50 hover:text-slate-700"
       } ${className || ""}`}
     >
       {children}
@@ -57,10 +82,11 @@ export const TabsTrigger: FC<TabsTriggerProps> = ({ value, children, className }
   );
 };
 
+// 5. TabsContent - Menampilkan konten jika activeTab cocok
 interface TabsContentProps {
   value: string;
   children: ReactNode;
-  className?: string; // ← tambahkan className
+  className?: string;
 }
 export const TabsContent: FC<TabsContentProps> = ({ value, children, className }) => {
   const context = useContext(TabsContext);
@@ -68,5 +94,7 @@ export const TabsContent: FC<TabsContentProps> = ({ value, children, className }
 
   const { activeTab } = context;
 
-  return <div className={className}>{activeTab === value ? children : null}</div>; // ← pakai className
+  if (activeTab !== value) return null;
+
+  return <div className={className}>{children}</div>;
 };

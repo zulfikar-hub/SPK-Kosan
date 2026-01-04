@@ -64,6 +64,7 @@ export default function DashboardPage() {
   const [kriteriaList, setKriteriaList] = useState<Kriteria[]>([]);
   const [bobotSementara, setBobotSementara] = useState<Record<string, number>>({});
   const [hasCalculated, setHasCalculated] = useState(false);
+  const [activeTab, setActiveTab] = useState("bobot");
 
   // 1. Fetch Data Kosan
   useEffect(() => {
@@ -103,7 +104,6 @@ export default function DashboardPage() {
     fetchKriteria();
   }, []);
 
-  // --- FUNGSI UNTUK MENANGANI PERUBAHAN SLIDER ---
   // --- FUNGSI UNTUK MENANGANI PERUBAHAN BOBOT (DROPDOWN) ---
 const handleBobotChange = (key: string, value: number) => {
   setBobotSementara((prev) => ({
@@ -113,39 +113,53 @@ const handleBobotChange = (key: string, value: number) => {
 };
 
   // --- FUNGSI HITUNG MENGGUNAKAN ENGINE PUSAT ---
-  const calculateTOPSIS = () => {
-    if (!kosanList.length) return;
+// --- FUNGSI HITUNG MENGGUNAKAN ENGINE PUSAT ---
+const calculateTOPSIS = () => {
+  // Pastikan data ada dan total bobot tepat 100%
+  if (!kosanList.length || totalPersen !== 100) {
+    alert("Total bobot harus 100% sebelum menghitung!");
+    return;
+  }
 
-    // Urutan weightsArray harus sesuai dengan urutan kolom di Engine
-    const weightsArray = [
-      (bobotSementara["harga"] || 0) / 100,
-      (bobotSementara["jarak"] || 0) / 100,
-      (bobotSementara["fasilitas"] || 0) / 100,
-      (bobotSementara["rating"] || 0) / 100,
-      (bobotSementara["sistem_keamanan"] || 0) / 100,
-    ];
+  // Urutan weightsArray harus sesuai dengan urutan kolom di Engine
+  const weightsArray = [
+    (bobotSementara["harga"] || 0) / 100,
+    (bobotSementara["jarak"] || 0) / 100,
+    (bobotSementara["fasilitas"] || 0) / 100,
+    (bobotSementara["rating"] || 0) / 100,
+    (bobotSementara["sistem_keamanan"] || 0) / 100,
+  ];
 
-    // Panggil Engine Pusat dengan casting agar aman dari Decimal Prisma
-const hasilTopsis = runTopsisLogic(kosanList as KosanData[], weightsArray);
-    // Update list kosan dengan hasil skor
-    const updatedList = kosanList.map((k) => {
-      const match = hasilTopsis.find(
-        (h) => h.id_kosan.toString() === k.id_kosan.toString()
-      );
+  // 1. Panggil Engine Pusat
+  const hasilTopsis = runTopsisLogic(kosanList as KosanData[], weightsArray);
 
-      return {
-        ...k,
-        skor: match ? Number(match.nilai_preferensi.toFixed(3)) : 0,
-      };
-    });
+  // 2. Update list kosan dengan hasil skor dari engine
+  const updatedList = kosanList.map((k) => {
+    const match = hasilTopsis.find(
+      (h) => h.id_kosan.toString() === k.id_kosan.toString()
+    );
 
-    // Urutkan berdasarkan skor tertinggi (Ranking 1 di atas)
-    setKosanList(updatedList.sort((a, b) => (b.skor ?? 0) - (a.skor ?? 0)));
-    setHasCalculated(true);
-  };
+    return {
+      ...k,
+      skor: match ? Number(match.nilai_preferensi.toFixed(3)) : 0,
+    };
+  });
 
-  const totalPersen = Object.values(bobotSementara).reduce((s, v) => s + (Number(v) || 0), 0);
+  // 3. Urutkan berdasarkan skor tertinggi (Ranking 1 di atas)
+  const sortedList = [...updatedList].sort((a, b) => (b.skor ?? 0) - (a.skor ?? 0));
+  
+  setKosanList(sortedList);
+  setHasCalculated(true);
 
+  // 4. OTOMATIS PINDAH KE TAB HASIL
+  setActiveTab("hasil"); 
+};
+
+// Menghitung total bobot secara real-time
+const totalPersen = Object.values(bobotSementara).reduce(
+  (acc, val) => acc + (Number(val) || 0), 
+  0
+);
   const icons: Record<string, ReactNode> = {
     harga: <DollarSign className="h-6 w-6 text-purple-600" />,
     jarak: <MapPin className="h-6 w-6 text-cyan-500" />,
@@ -154,8 +168,11 @@ const hasilTopsis = runTopsisLogic(kosanList as KosanData[], weightsArray);
     sistem_keamanan: <Shield className="h-6 w-6 text-red-500" />,
   };
 
-  const chartData = kosanList.map((kosan) => ({
-    nama: kosan.nama,
+ // Data untuk Grafik Batang (Bar Chart)
+const chartData = kosanList
+  .filter(k => (k.skor ?? 0) > 0) // Hanya tampilkan yang sudah ada skornya
+  .map((kosan) => ({
+    nama: kosan.nama.length > 10 ? kosan.nama.substring(0, 10) + "..." : kosan.nama,
     skor: kosan.skor || 0,
   }));
 
@@ -230,8 +247,8 @@ const hasilTopsis = runTopsisLogic(kosanList as KosanData[], weightsArray);
           </Card>
         </div>
 
-        <Tabs defaultValue="data" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="data">Data Kosan</TabsTrigger>
             <TabsTrigger value="bobot">Bobot Kriteria</TabsTrigger>
             <TabsTrigger value="hasil">Hasil Analisis</TabsTrigger>
@@ -314,8 +331,8 @@ const hasilTopsis = runTopsisLogic(kosanList as KosanData[], weightsArray);
     { t: "Sangat Puas (30%)", v: 30 },
     { t: "Puas (25%)", v: 25 },
     { t: "Cukup (20%)", v: 20 },
-    { t: "Buruk (15%)", v: 15 },
-    { t: "Sangat Buruk (10%)", v: 10 }
+    { t: "kurang (15%)", v: 15 },
+    { t: "Sangat kurang (10%)", v: 10 }
   ],
   sistem_keamanan: [
     { t: "Sangat Aman (30%)", v: 30 },
@@ -415,58 +432,72 @@ const options = labels[key] || [
 </TabsContent>
 
           {/* TAB HASIL ANALISIS */}
-          <TabsContent value="hasil">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Hasil Analisis TOPSIS</CardTitle>
-                <Button onClick={calculateTOPSIS} disabled={kosanList.length === 0 || totalPersen !== 100}>
-                  <Calculator className="h-4 w-4 mr-2" /> Hitung Sekarang
-                </Button>
-              </CardHeader>
-              <CardContent>
-                {hasCalculated ? (
-                  <div className="space-y-8">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Rank</TableHead>
-                          <TableHead>Nama</TableHead>
-                          <TableHead>Skor</TableHead>
-                          <TableHead>Visual</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {kosanList.map((k, i) => (
-                          <TableRow key={k.id_kosan}>
-                            <TableCell><Badge variant={i === 0 ? "default" : "outline"}>#{i+1}</Badge></TableCell>
-                            <TableCell className="font-medium">{k.nama}</TableCell>
-                            <TableCell>{k.skor}</TableCell>
-                            <TableCell><Progress value={(k.skor || 0) * 100} className="w-24" /></TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="nama" />
-                          <YAxis domain={[0, 1]} />
-                          <Tooltip />
-                          <Bar dataKey="skor" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    Pastikan total bobot 100% lalu klik Hitung.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <TabsContent value="hasil" className="space-y-6">
+  <Card>
+    <CardHeader>
+      <CardTitle>Hasil Analisis TOPSIS</CardTitle>
+      <p className="text-sm text-muted-foreground italic">
+        Menampilkan peringkat kosan berdasarkan preferensi bobot yang Anda tentukan.
+      </p>
+    </CardHeader>
+    <CardContent>
+      {hasCalculated ? (
+        <div className="space-y-8">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[80px]">Rank</TableHead>
+                <TableHead>Nama Kosan</TableHead>
+                <TableHead>Skor Akhir</TableHead>
+                <TableHead>Visualisasi</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {kosanList.map((k, i) => (
+                <TableRow key={k.id_kosan} className={i === 0 ? "bg-green-50/50" : ""}>
+                  <TableCell>
+                    <Badge variant={i === 0 ? "default" : "outline"} className={i === 0 ? "bg-green-600" : ""}>
+                      #{i + 1}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-bold">{k.nama}</TableCell>
+                  <TableCell>{k.skor}</TableCell>
+                  <TableCell>
+                    <Progress value={(k.skor || 0) * 100} className="w-24 h-2" />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
 
+          {/* Bar Chart untuk Visualisasi Ranking */}
+          <div className="h-72 mt-8">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="nama" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis domain={[0, 1]} fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip 
+                  cursor={{fill: '#f3f4f6'}}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Bar dataKey="skor" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <Calculator className="h-12 w-12 text-muted-foreground/30 mb-4" />
+          <h3 className="text-lg font-medium">Belum Ada Analisis</h3>
+          <p className="text-sm text-muted-foreground max-w-[250px]">
+            Silakan atur bobot kriteria terlebih dahulu pada tab <b>Bobot</b>.
+          </p>
+        </div>
+      )}
+    </CardContent>
+  </Card>
+</TabsContent>
           {/* TAB KEAMANAN */}
           <TabsContent value="keamanan" className="space-y-6">
             <Card>
