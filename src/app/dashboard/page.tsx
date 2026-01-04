@@ -371,7 +371,7 @@ const chartData = kosanList
     { t: "Sangat Aman (30%)", v: 30 },
     { t: "Aman (25%)", v: 25 },
     { t: "Cukup (20%)", v: 20 },
-    { t: "Rawan (15%)", v: 15 },
+    { t: "Kurang (15%)", v: 15 },
     { t: "Sangat Rawan (10%)", v: 10 }
   ],
 };
@@ -553,37 +553,46 @@ const options = labels[key] || [
           </TableRow>
         </TableHeader>
         <TableBody>
-          {kosanList.map((k) => {
+         {kosanList.map((k) => {
   const nilai = Number(k.sistem_keamanan);
   let statusLabel = "";
   let badgeClass = "";
 
   if (nilai >= 4.6) {
     statusLabel = "Sangat Aman";
-    badgeClass = "bg-emerald-500 text-white";
+    // Hijau Emerald yang sangat lembut
+    badgeClass = "bg-emerald-50 text-emerald-700 border-emerald-100";
   } else if (nilai >= 3.6) {
     statusLabel = "Aman";
-    badgeClass = "bg-green-400 text-white";
+    // Hijau biasa yang lembut
+    badgeClass = "bg-green-50 text-green-700 border-green-100";
   } else if (nilai >= 2.6) {
     statusLabel = "Cukup";
-    badgeClass = "bg-yellow-400 text-yellow-900";
+    // Kuning Amber yang tenang
+    badgeClass = "bg-amber-50 text-amber-700 border-amber-100";
   } else if (nilai >= 1.6) {
     statusLabel = "Kurang";
-    badgeClass = "bg-orange-400 text-white";
+    // Oranye lembut
+    badgeClass = "bg-orange-50 text-orange-700 border-orange-100";
   } else {
     statusLabel = "Bahaya";
-    badgeClass = "bg-red-500 text-white";
+    // Merah Rose yang tipis
+    badgeClass = "bg-rose-50 text-rose-700 border-rose-100";
   }
 
   return (
-    <TableRow key={k.id_kosan}>
-      <TableCell className="font-medium">{k.nama}</TableCell>
+    <TableRow key={k.id_kosan} className="hover:bg-slate-50/50">
+      <TableCell className="font-medium text-slate-700">{k.nama}</TableCell>
       <TableCell className="text-center">
-        <Badge className={`px-3 py-1 rounded-full shadow-sm border-none ${badgeClass}`}>
+        {/* Tambahkan variant="outline" atau langsung pakai border di badgeClass */}
+        <Badge className={`px-3 py-1 rounded-full border shadow-none font-semibold ${badgeClass}`}>
           {statusLabel}
         </Badge>
       </TableCell>
-      <TableCell className="text-right font-bold">{nilai}/5</TableCell>
+      <TableCell className="text-right">
+        <span className="text-slate-600 font-bold">{nilai}</span>
+        <span className="text-slate-400 text-[10px] ml-1">/ 5</span>
+      </TableCell>
     </TableRow>
   );
 })}
