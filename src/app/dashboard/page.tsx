@@ -288,33 +288,51 @@ const hasilTopsis = runTopsisLogic(kosanList as KosanData[], weightsArray);
           const currentVal = bobotSementara[key] || 0;
 
           // Mapping label berdasarkan nama kriteria
-          const labels: Record<string, { t: string; v: number }[]> = {
-            harga: [
-              { t: "Sangat Murah (100%)", v: 100 }, { t: "Murah (80%)", v: 80 },
-              { t: "Cukup (60%)", v: 60 }, { t: "Mahal (40%)", v: 40 }, { t: "Sangat Mahal (20%)", v: 20 }
-            ],
-            jarak: [
-              { t: "Sangat Dekat (100%)", v: 100 }, { t: "Dekat (80%)", v: 80 },
-              { t: "Cukup (60%)", v: 60 }, { t: "Jauh (40%)", v: 40 }, { t: "Sangat Jauh (20%)", v: 20 }
-            ],
-            fasilitas: [
-              { t: "Sangat Lengkap (100%)", v: 100 }, { t: "Lengkap (80%)", v: 80 },
-              { t: "Cukup (60%)", v: 60 }, { t: "Kurang (40%)", v: 40 }, { t: "Sangat Kurang (20%)", v: 20 }
-            ],
-            rating: [
-              { t: "Sangat Puas (100%)", v: 100 }, { t: "Puas (80%)", v: 80 },
-              { t: "Cukup (60%)", v: 60 }, { t: "Buruk (40%)", v: 40 }, { t: "Sangat Buruk (20%)", v: 20 }
-            ],
-            sistem_keamanan: [
-              { t: "Sangat Aman (100%)", v: 100 }, { t: "Aman (80%)", v: 80 },
-              { t: "Cukup (60%)", v: 60 }, { t: "Rawan (40%)", v: 40 }, { t: "Sangat Rawan (20%)", v: 20 }
-            ],
-          };
+         const labels: Record<string, { t: string; v: number }[]> = {
+  harga: [
+    { t: "Sangat Murah (30%)", v: 30 },
+    { t: "Murah (25%)", v: 25 },
+    { t: "Cukup (20%)", v: 20 },
+    { t: "Mahal (15%)", v: 15 },
+    { t: "Sangat Mahal (10%)", v: 10 }
+  ],
+  jarak: [
+    { t: "Sangat Dekat (30%)", v: 30 },
+    { t: "Dekat (25%)", v: 25 },
+    { t: "Cukup (20%)", v: 20 },
+    { t: "Jauh (15%)", v: 15 },
+    { t: "Sangat Jauh (10%)", v: 10 }
+  ],
+  fasilitas: [
+    { t: "Sangat Lengkap (30%)", v: 30 },
+    { t: "Lengkap (25%)", v: 25 },
+    { t: "Cukup (20%)", v: 20 },
+    { t: "Kurang (15%)", v: 15 },
+    { t: "Sangat Kurang (10%)", v: 10 }
+  ],
+  rating: [
+    { t: "Sangat Puas (30%)", v: 30 },
+    { t: "Puas (25%)", v: 25 },
+    { t: "Cukup (20%)", v: 20 },
+    { t: "Buruk (15%)", v: 15 },
+    { t: "Sangat Buruk (10%)", v: 10 }
+  ],
+  sistem_keamanan: [
+    { t: "Sangat Aman (30%)", v: 30 },
+    { t: "Aman (25%)", v: 25 },
+    { t: "Cukup (20%)", v: 20 },
+    { t: "Rawan (15%)", v: 15 },
+    { t: "Sangat Rawan (10%)", v: 10 }
+  ],
+};
 
-          const options = labels[key] || [
-            { t: "Sangat Tinggi (100%)", v: 100 }, { t: "Tinggi (80%)", v: 80 },
-            { t: "Cukup (60%)", v: 60 }, { t: "Rendah (40%)", v: 40 }, { t: "Sangat Rendah (20%)", v: 20 }
-          ];
+const options = labels[key] || [
+  { t: "Sangat Tinggi (30%)", v: 30 },
+  { t: "Tinggi (25%)", v: 25 },
+  { t: "Cukup (20%)", v: 20 },
+  { t: "Rendah (15%)", v: 15 },
+  { t: "Sangat Rendah (10%)", v: 10 }
+];
 
           return (
             <div key={k.id} className="bg-white p-5 rounded-xl border shadow-sm flex flex-col">
