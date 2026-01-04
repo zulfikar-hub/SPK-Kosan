@@ -3,7 +3,6 @@
 import { useState, useEffect, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import  Slider  from "@/components/ui/slider";
 import { Navigation } from "@/components/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -105,12 +104,13 @@ export default function DashboardPage() {
   }, []);
 
   // --- FUNGSI UNTUK MENANGANI PERUBAHAN SLIDER ---
-  const handleSliderChange = (key: string, value: number) => {
-    setBobotSementara((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
+  // --- FUNGSI UNTUK MENANGANI PERUBAHAN BOBOT (DROPDOWN) ---
+const handleBobotChange = (key: string, value: number) => {
+  setBobotSementara((prev) => ({
+    ...prev,
+    [key]: value,
+  }));
+};
 
   // --- FUNGSI HITUNG MENGGUNAKAN ENGINE PUSAT ---
   const calculateTOPSIS = () => {
@@ -273,58 +273,128 @@ const hasilTopsis = runTopsisLogic(kosanList as KosanData[], weightsArray);
 
           {/* TAB BOBOT KRITERIA */}
           <TabsContent value="bobot" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Pengaturan Bobot Kriteria</CardTitle>
-                <p className="text-sm text-muted-foreground">Sesuaikan prioritas Anda (Total: {totalPersen}%)</p>
-              </CardHeader>
-              <CardContent className="space-y-8">
-                <div className="grid md:grid-cols-3 gap-6">
-                  {kriteriaList.map((k) => {
-                    const key = (k.nama ?? k.nama_kriteria ?? "").toLowerCase().replace(/\s+/g, "_");
-                    const currentVal = bobotSementara[key] || 0;
-                    return (
-                      <div key={k.id} className="bg-white p-4 rounded-xl border flex flex-col items-center">
-                        <div className="flex flex-col items-center mb-4">
-                          {icons[key] || <Calculator className="h-6 w-6" />}
-                          <span className="font-medium mt-2 capitalize">{key.replace("_", " ")}</span>
-                        </div>
-                        <Slider
-                          value={[currentVal]}
-                          onValueChange={(v: number[]) => handleSliderChange(key, v[0])}
-                          max={100}
-                          step={5}
-                          className="w-full"
-                        />
-                        <div className="mt-2 text-sm font-bold">{currentVal}%</div>
-                      </div>
-                    );
-                  })}
-                </div>
+  <Card>
+    <CardHeader>
+      <CardTitle>Pengaturan Bobot Kriteria</CardTitle>
+      <p className="text-sm text-muted-foreground">
+        Tentukan tingkat kepentingan setiap kriteria (Total: {totalPersen}%)
+      </p>
+    </CardHeader>
+    <CardContent className="space-y-8">
+      {/* GRID DROPDOWN DENGAN LABEL KHUSUS */}
+      <div className="grid md:grid-cols-3 gap-6">
+        {kriteriaList.map((k) => {
+          const key = (k.nama ?? k.nama_kriteria ?? "").toLowerCase().replace(/\s+/g, "_");
+          const currentVal = bobotSementara[key] || 0;
 
-                <div className="text-right font-bold text-lg">
-                  Total: <span className={totalPersen === 100 ? "text-green-600" : "text-red-500"}>{totalPersen}%</span>
-                </div>
+          // Mapping label berdasarkan nama kriteria
+          const labels: Record<string, { t: string; v: number }[]> = {
+            harga: [
+              { t: "Sangat Murah (100%)", v: 100 }, { t: "Murah (80%)", v: 80 },
+              { t: "Cukup (60%)", v: 60 }, { t: "Mahal (40%)", v: 40 }, { t: "Sangat Mahal (20%)", v: 20 }
+            ],
+            jarak: [
+              { t: "Sangat Dekat (100%)", v: 100 }, { t: "Dekat (80%)", v: 80 },
+              { t: "Cukup (60%)", v: 60 }, { t: "Jauh (40%)", v: 40 }, { t: "Sangat Jauh (20%)", v: 20 }
+            ],
+            fasilitas: [
+              { t: "Sangat Lengkap (100%)", v: 100 }, { t: "Lengkap (80%)", v: 80 },
+              { t: "Cukup (60%)", v: 60 }, { t: "Kurang (40%)", v: 40 }, { t: "Sangat Kurang (20%)", v: 20 }
+            ],
+            rating: [
+              { t: "Sangat Puas (100%)", v: 100 }, { t: "Puas (80%)", v: 80 },
+              { t: "Cukup (60%)", v: 60 }, { t: "Buruk (40%)", v: 40 }, { t: "Sangat Buruk (20%)", v: 20 }
+            ],
+            sistem_keamanan: [
+              { t: "Sangat Aman (100%)", v: 100 }, { t: "Aman (80%)", v: 80 },
+              { t: "Cukup (60%)", v: 60 }, { t: "Rawan (40%)", v: 40 }, { t: "Sangat Rawan (20%)", v: 20 }
+            ],
+          };
 
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={Object.entries(bobotSementara).map(([name, value]) => ({ name, value }))}
-                        cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value"
-                        label={({ name, value }) => `${name}: ${value}%`}
-                      >
-                        {Object.keys(bobotSementara).map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={["#8b5cf6", "#06b6d4", "#f59e0b", "#10b981", "#ef4444"][index % 5]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
+          const options = labels[key] || [
+            { t: "Sangat Tinggi (100%)", v: 100 }, { t: "Tinggi (80%)", v: 80 },
+            { t: "Cukup (60%)", v: 60 }, { t: "Rendah (40%)", v: 40 }, { t: "Sangat Rendah (20%)", v: 20 }
+          ];
+
+          return (
+            <div key={k.id} className="bg-white p-5 rounded-xl border shadow-sm flex flex-col">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                  {icons[key] || <Calculator className="h-5 w-5" />}
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                <span className="font-semibold capitalize text-sm">{key.replace("_", " ")}</span>
+              </div>
+
+              <select
+                className="w-full p-2 rounded-md border border-input bg-background text-sm focus:ring-2 focus:ring-primary outline-none"
+                value={currentVal}
+                onChange={(e) => handleBobotChange(key, Number(e.target.value))}
+              >
+                <option value={0}>-- Pilih Prioritas --</option>
+                {options.map((opt) => (
+                  <option key={opt.v} value={opt.v}>{opt.t}</option>
+                ))}
+              </select>
+
+              <div className="mt-3 text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
+                Nilai: {currentVal}%
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* VALIDASI TOTAL DAN TOMBOL HITUNG */}
+      <div className="flex flex-col md:flex-row justify-between items-center border-t pt-6 gap-4">
+        <div className="flex flex-col">
+          <div className="text-xl font-bold">
+            Total Bobot: <span className={totalPersen === 100 ? "text-green-600" : "text-red-500"}>{totalPersen}%</span>
+          </div>
+          {totalPersen !== 100 && (
+            <span className="text-xs text-red-500 italic">Total harus 100% untuk menghitung</span>
+          )}
+        </div>
+        
+        <Button 
+          onClick={calculateTOPSIS} 
+          disabled={totalPersen !== 100}
+          className="w-full md:w-48 bg-primary shadow-lg transition-all active:scale-95"
+        >
+          <Calculator className="mr-2 h-4 w-4" />
+          Hitung TOPSIS
+        </Button>
+      </div>
+
+      {/* PIE CHART TANPA ERROR ESLINT */}
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={Object.entries(bobotSementara)
+                .filter((entry) => entry[1] > 0)
+                .map(([name, value]) => ({ 
+                  name: name.replace("_", " "), 
+                  value: Number(value) 
+                }))}
+              cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value"
+              label={({ name, value }) => `${name}: ${value}%`}
+            >
+              {Object.entries(bobotSementara)
+                .filter((entry) => entry[1] > 0)
+                .map((item, index) => (
+                  <Cell 
+                    key={`cell-${item[0]}-${index}`} 
+                    fill={["#8b5cf6", "#06b6d4", "#f59e0b", "#10b981", "#ef4444"][index % 5]} 
+                  />
+                ))}
+            </Pie>
+            <Tooltip />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    </CardContent>
+  </Card>
+</TabsContent>
 
           {/* TAB HASIL ANALISIS */}
           <TabsContent value="hasil">
