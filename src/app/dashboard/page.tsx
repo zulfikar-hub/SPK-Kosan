@@ -554,36 +554,39 @@ const options = labels[key] || [
         </TableHeader>
         <TableBody>
           {kosanList.map((k) => {
-            // Logika baru untuk skala 1-5
-            const nilai = Number(k.sistem_keamanan);
-            let statusLabel = "Cukup";
-            let badgeClass = "bg-slate-100 text-slate-600 border-none"; // Default Cukup
+  const nilai = Number(k.sistem_keamanan);
+  let statusLabel = "";
+  let badgeClass = "";
 
-            if (nilai >= 4.5) {
-              statusLabel = "Sangat Aman";
-              badgeClass = "bg-emerald-100 text-emerald-700 border-none font-bold";
-            } else if (nilai >= 3) {
-              statusLabel = "Aman";
-              badgeClass = "bg-amber-100 text-amber-700 border-none font-bold";
-            }
+  if (nilai >= 4.6) {
+    statusLabel = "Sangat Aman";
+    badgeClass = "bg-emerald-500 text-white";
+  } else if (nilai >= 3.6) {
+    statusLabel = "Aman";
+    badgeClass = "bg-green-400 text-white";
+  } else if (nilai >= 2.6) {
+    statusLabel = "Cukup";
+    badgeClass = "bg-yellow-400 text-yellow-900";
+  } else if (nilai >= 1.6) {
+    statusLabel = "Kurang";
+    badgeClass = "bg-orange-400 text-white";
+  } else {
+    statusLabel = "Bahaya";
+    badgeClass = "bg-red-500 text-white";
+  }
 
-            return (
-              <TableRow key={k.id_kosan} className="hover:bg-slate-50/30 transition-colors">
-                <TableCell className="font-medium text-slate-700">{k.nama}</TableCell>
-                <TableCell className="text-center">
-                  <Badge className={`px-3 py-1 rounded-full ${badgeClass}`}>
-                    {statusLabel}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="inline-flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-md">
-                    <span className="font-bold text-slate-700">{nilai}</span>
-                    <span className="text-slate-400 text-[10px]">/ 5</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            );
-          })}
+  return (
+    <TableRow key={k.id_kosan}>
+      <TableCell className="font-medium">{k.nama}</TableCell>
+      <TableCell className="text-center">
+        <Badge className={`px-3 py-1 rounded-full shadow-sm border-none ${badgeClass}`}>
+          {statusLabel}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-right font-bold">{nilai}/5</TableCell>
+    </TableRow>
+  );
+})}
         </TableBody>
       </Table>
     </CardContent>
