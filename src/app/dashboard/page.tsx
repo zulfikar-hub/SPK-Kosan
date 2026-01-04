@@ -35,7 +35,7 @@ import {
   Star,
   Wifi,
   Shield,
-  Camera,
+
 } from "lucide-react";
 
 // --- IMPORT ENGINE PUSAT ---
@@ -532,41 +532,63 @@ const options = labels[key] || [
   </Card>
 </TabsContent>
           {/* TAB KEAMANAN */}
-          <TabsContent value="keamanan" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Camera className="h-5 w-5 text-primary" />
-                  Analisis Sistem Keamanan
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nama Kosan</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Nilai</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {kosanList.map((k) => (
-                      <TableRow key={k.id_kosan}>
-                        <TableCell className="font-medium">{k.nama}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {k.sistem_keamanan >= 8 ? "Sangat Aman" : k.sistem_keamanan >= 6 ? "Aman" : "Cukup"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{k.sistem_keamanan}/10</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <TabsContent value="keamanan" className="animate-in fade-in slide-in-from-bottom-2">
+  <Card className="border-none shadow-lg shadow-slate-200/50">
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2 text-xl font-bold">
+        <Shield className="h-6 w-6 text-blue-600" />
+        Analisis Sistem Keamanan
+      </CardTitle>
+      <p className="text-sm text-muted-foreground">
+        Klasifikasi tingkat keamanan berdasarkan fasilitas keamanan terpasang.
+      </p>
+    </CardHeader>
+    <CardContent>
+      <Table>
+        <TableHeader className="bg-slate-50/50">
+          <TableRow>
+            <TableHead className="font-bold">Nama Kosan</TableHead>
+            <TableHead className="font-bold text-center">Tingkat Keamanan</TableHead>
+            <TableHead className="font-bold text-right">Skor Data</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {kosanList.map((k) => {
+            // Logika baru untuk skala 1-5
+            const nilai = Number(k.sistem_keamanan);
+            let statusLabel = "Cukup";
+            let badgeClass = "bg-slate-100 text-slate-600 border-none"; // Default Cukup
 
+            if (nilai >= 4.5) {
+              statusLabel = "Sangat Aman";
+              badgeClass = "bg-emerald-100 text-emerald-700 border-none font-bold";
+            } else if (nilai >= 3) {
+              statusLabel = "Aman";
+              badgeClass = "bg-amber-100 text-amber-700 border-none font-bold";
+            }
+
+            return (
+              <TableRow key={k.id_kosan} className="hover:bg-slate-50/30 transition-colors">
+                <TableCell className="font-medium text-slate-700">{k.nama}</TableCell>
+                <TableCell className="text-center">
+                  <Badge className={`px-3 py-1 rounded-full ${badgeClass}`}>
+                    {statusLabel}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="inline-flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-md">
+                    <span className="font-bold text-slate-700">{nilai}</span>
+                    <span className="text-slate-400 text-[10px]">/ 5</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </CardContent>
+  </Card>
+</TabsContent>
         
         </Tabs>
       </div>
