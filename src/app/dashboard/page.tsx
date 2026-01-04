@@ -257,36 +257,69 @@ const chartData = kosanList
 
           {/* TAB DATA KOSAN */}
           <TabsContent value="data">
-            <Card>
-              <CardHeader><CardTitle>Daftar Kosan</CardTitle></CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nama</TableHead>
-                      <TableHead>Harga</TableHead>
-                      <TableHead>Jarak</TableHead>
-                      <TableHead>Fasilitas</TableHead>
-                      <TableHead>Rating</TableHead>
-                      <TableHead>Keamanan</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {kosanList.map((k) => (
-                      <TableRow key={k.id_kosan}>
-                        <TableCell className="font-medium">{k.nama}</TableCell>
-                        <TableCell>Rp {Number(k.harga).toLocaleString("id-ID")}</TableCell>
-                        <TableCell>{k.jarak} km</TableCell>
-                        <TableCell>{k.fasilitas}/10</TableCell>
-                        <TableCell>{k.rating}/5</TableCell>
-                        <TableCell>{k.sistem_keamanan}/10</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
+  <Card className="border-none shadow-sm">
+    <CardHeader>
+      <CardTitle className="text-xl font-bold text-slate-800">Daftar Kosan</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <Table>
+        <TableHeader className="bg-slate-50">
+          <TableRow>
+            <TableHead className="font-bold">Nama Kosan</TableHead>
+            <TableHead className="font-bold">Harga</TableHead>
+            <TableHead className="font-bold">Jarak</TableHead>
+            <TableHead className="font-bold">Fasilitas</TableHead>
+            <TableHead className="font-bold">Rating</TableHead>
+            <TableHead className="font-bold">Keamanan</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {kosanList.map((k) => (
+            <TableRow key={k.id_kosan} className="hover:bg-slate-50/50 transition-colors">
+              <TableCell className="font-semibold text-slate-700">{k.nama}</TableCell>
+              <TableCell>
+                <span className="text-green-600 font-medium">
+                  Rp {Number(k.harga).toLocaleString("id-ID")}
+                </span>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-3 w-3 text-slate-400" />
+                  <span>{k.jarak} km</span>
+                </div>
+              </TableCell>
+              
+              {/* Kolom Fasilitas - Skala 5 */}
+              <TableCell>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-slate-700">{Number(k.fasilitas)}</span>
+                  <span className="text-slate-400 text-[10px] font-medium">/ 5</span>
+                </div>
+              </TableCell>
+              
+              {/* Kolom Rating - Skala 5 dengan Ikon Bintang */}
+              <TableCell>
+                <div className="flex items-center gap-1.5">
+                  <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                  <span className="font-bold text-slate-700">{k.rating}</span>
+                </div>
+              </TableCell>
+
+              {/* Kolom Keamanan - Skala 5 */}
+              <TableCell>
+                <div className="flex items-center gap-1.5">
+                  <Shield className="h-3.5 w-3.5 text-blue-500" />
+                  <span className="font-bold text-slate-700">{Number(k.sistem_keamanan)}</span>
+                  <span className="text-slate-400 text-[10px] font-medium">/ 5</span>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </CardContent>
+  </Card>
+</TabsContent>
 
           {/* TAB BOBOT KRITERIA */}
           <TabsContent value="bobot" className="space-y-6">
